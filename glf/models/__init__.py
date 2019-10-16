@@ -4,8 +4,8 @@ logger = logging.getLogger('base')
 
 def create_model(opt):
     model = opt['model']
-    if model == 'glf':
-        from .GLF_model import GLFModel as M
+    if model == 'generative':
+        from .generative_model import GenerativeModel as M
     else:
         raise NotImplementedError('Model [{:s}] not recognized.'.format(model))
     m = M(opt)
