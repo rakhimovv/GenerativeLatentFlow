@@ -37,6 +37,8 @@ def predict_inception(model: InceptionPredictor, images: torch.Tensor) -> torch.
     pass
 
 
+# https://arxiv.org/pdf/1706.08500.pdf (FID)
+# https://arxiv.org/pdf/1606.03498.pdf (IS)
 def frechet_distance(latent_true: np.ndarray, latent_artificial: np.ndarray) -> float:
     # https://github.com/mseitzer/pytorch-fid/blob/master/fid_score.py
     assert latent_true.shape == latent_artificial.shape
