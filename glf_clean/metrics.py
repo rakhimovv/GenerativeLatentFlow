@@ -14,7 +14,7 @@ def frechet_distance(latent_true: np.ndarray, latent_artificial: np.ndarray) -> 
 
     euc_norm = np.linalg.norm(mu_true - mu_artificial, ord=2)
     fid = euc_norm + np.trace(sigma_true) + np.trace(sigma_artificial) - 2 * np.trace(matrix_sqrt)
-    return fid
+    return float(fid)
 
 
 if __name__ == '__main__':
