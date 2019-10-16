@@ -48,9 +48,9 @@ class GenerativeModel(BaseModel):
             if train_opt['pixel_weight'] > 0:
                 l_pix_type = train_opt['pixel_criterion']
                 if l_pix_type == 'l1':
-                    self.cri_pix = nn.L1Loss().to(self.device)
+                    self.cri_pix = nn.L1Loss(reduction='mean').to(self.device)
                 elif l_pix_type == 'l2':
-                    self.cri_pix = nn.MSELoss().to(self.device)
+                    self.cri_pix = nn.MSELoss(reduction='mean').to(self.device)
                 else:
                     raise NotImplementedError('Loss type [{:s}] not recognized.'.format(l_pix_type))
                 self.l_pix_w = train_opt['pixel_weight']
@@ -66,9 +66,9 @@ class GenerativeModel(BaseModel):
             if train_opt['feature_weight'] > 0:
                 l_fea_type = train_opt['feature_criterion']
                 if l_fea_type == 'l1':
-                    self.cri_fea = nn.L1Loss().to(self.device)
+                    self.cri_fea = nn.L1Loss(reduction='mean').to(self.device)
                 elif l_fea_type == 'l2':
-                    self.cri_fea = nn.MSELoss().to(self.device)
+                    self.cri_fea = nn.MSELoss(reduction='mean').to(self.device)
                 else:
                     raise NotImplementedError('Loss type [{:s}] not recognized.'.format(l_fea_type))
                 self.l_fea_w = train_opt['feature_weight']
@@ -84,22 +84,41 @@ class GenerativeModel(BaseModel):
                     self.netVGG = DataParallel(self.netVGG)
 
             # optimizers
-            self.optimizer_E = torch.optim.Adam(self.netE.parameters(),
-                                                lr=train_opt['lr_E'],
-                                                weight_decay=train_opt['weight_decay_E'] if train_opt[
-                                                    'weight_decay_E'] else 0,
-                                                betas=(train_opt['beta1_E'], train_opt['beta2_E']))
-            self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
-                                                lr=train_opt['lr_D'],
-                                                weight_decay=train_opt['weight_decay_D'] if train_opt[
-                                                    'weight_decay_D'] else 0,
-                                                betas=(train_opt['beta1_D'], train_opt['beta2_D']))
-            self.optimizer_F = torch.optim.Adam(self.netF.parameters(),
-                                                lr=train_opt['lr_F'],
-                                                weight_decay=train_opt['weight_decay_F'] if train_opt[
-                                                    'weight_decay_F'] else 0,
-                                                betas=(train_opt['beta1_F'], train_opt['beta2_F']))
-            self.optimizers = [self.optimizer_E, self.optimizer_D, self.optimizer_F]
+            if train_opt['lr_E'] > 0:
+                self.optimizer_E = torch.optim.Adam(self.netE.parameters(),
+                                                    lr=train_opt['lr_E'],
+                                                    weight_decay=train_opt['weight_decay_E'] if train_opt[
+                                                        'weight_decay_E'] else 0,
+                                                    betas=(train_opt['beta1_E'], train_opt['beta2_E']))
+                self.optimizers.append(self.optimizer_E)
+            else:
+                for p in self.netE.parameters():
+                    p.requires_grad_(False)
+                logger.info('Freeze encoder.')
+
+            if train_opt['lr_D'] > 0:
+                self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
+                                                    lr=train_opt['lr_D'],
+                                                    weight_decay=train_opt['weight_decay_D'] if train_opt[
+                                                        'weight_decay_D'] else 0,
+                                                    betas=(train_opt['beta1_D'], train_opt['beta2_D']))
+                self.optimizers.append(self.optimizer_D)
+            else:
+                for p in self.netD.parameters():
+                    p.requires_grad_(False)
+                logger.info('Freeze decoder.')
+
+            if train_opt['lr_F'] > 0:
+                self.optimizer_F = torch.optim.Adam(self.netF.parameters(),
+                                                    lr=train_opt['lr_F'],
+                                                    weight_decay=train_opt['weight_decay_F'] if train_opt[
+                                                        'weight_decay_F'] else 0,
+                                                    betas=(train_opt['beta1_F'], train_opt['beta2_F']))
+                self.optimizers.append(self.optimizer_F)
+            else:
+                for p in self.netF.parameters():
+                    p.requires_grad_(False)
+                logger.info('Freeze flow.')
 
             # schedulers
             if train_opt['lr_scheme'] == 'MultiStepLR':
@@ -130,17 +149,17 @@ class GenerativeModel(BaseModel):
             self.image_gt = self.image
 
     def optimize_parameters(self, step):
-        self.optimizer_E.zero_grad()
-        self.optimizer_D.zero_grad()
-        self.optimizer_F.zero_grad()
 
-        z = self.encoder(self.image)
-        reconstructed = self.decoder(z)
+        for optimizer in self.optimizers:
+            optimizer.zero_grad()
+
+        z = self.netE(self.image)
+        reconstructed = self.netD(z)
 
         l_total = 0
 
         if self.cri_pix:  # pixel loss
-            l_pix = self.l_pix_w * self.cri_pix(self.reconstructed, self.image_gt)
+            l_pix = self.l_pix_w * self.cri_pix(reconstructed, self.image_gt)
             l_total += l_pix
 
         if self.cri_fea:  # feature loss
@@ -155,9 +174,8 @@ class GenerativeModel(BaseModel):
         l_total += l_nll
 
         l_total.backward()
-        self.optimizer_E.step()
-        self.optimizer_D.step()
-        self.optimizer_F.step()
+        for optimizer in self.optimizers:
+            optimizer.step()
 
         # set log
         if self.cri_pix:
@@ -167,29 +185,25 @@ class GenerativeModel(BaseModel):
         if self.cri_nll:
             self.log_dict['l_nll'] = l_nll.item()
 
-    def test(self):
-        self.netE.eval()
-        self.netD.eval()
+    def sample_images(self, n=25):
         self.netF.eval()
-
         with torch.no_grad():
-            noise = torch.randn()
-            self.sampled_images = self.netF.reverse(noise)
-            self.reconstructed = self.netD(self.netE(self.image))
-
-        # TODO write logging
-
-        self.netE.train()
-        self.netD.train()
+            noise = torch.randn(n, 3, 100, 100)
+            sample = self.netF.reverse(noise).detach().float().cpu()
         self.netF.train()
+        return sample
+
+    # def test(self):
+    #     self.netE.eval()
+    #     self.netD.eval()
+    #     self.netF.eval()
+    #
+    #     self.netE.train()
+    #     self.netD.train()
+    #     self.netF.train()
 
     def get_current_log(self):
         return self.log_dict
-
-    def get_current_visuals(self):
-        out_dict = OrderedDict()
-        out_dict['sampled'] = self.sampled_images.detach()[0].float().cpu()
-        return out_dict
 
     def print_network(self):
         for name, net in [('E', self.netE), ('D', self.netD), ('F', self.netF)]:

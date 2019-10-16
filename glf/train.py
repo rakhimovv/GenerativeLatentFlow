@@ -4,13 +4,16 @@ import math
 import os
 import random
 
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from torchvision.utils import make_grid
 
 import options.options as option
 from data import create_dataloader, create_dataset
 from data.data_sampler import DistIterSampler
+from metrics import InceptionPredictor, frechet_distance
 from models import create_model
 from utils import util
 
@@ -128,6 +131,8 @@ def main():
 
     #### create model
     model = create_model(opt)
+    predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
+    predictor = InceptionPredictor(output_dim=64).to(predictor_device)
 
     #### resume training
     if resume_state:
@@ -174,124 +179,35 @@ def main():
                     logger.info(message)
             #### validation
             if opt['datasets'].get('val', None) and current_step % opt['train']['val_freq'] == 0:
-                if opt['model'] in ['sr', 'srgan'] and rank <= 0:  # image restoration validation
+                if rank <= 0:
                     # does not support multi-GPU validation
-                    pbar = util.ProgressBar(len(val_loader))
-                    avg_psnr = 0.
-                    idx = 0
-                    for val_data in val_loader:
-                        idx += 1
-                        img_name = os.path.splitext(os.path.basename(val_data['LQ_path'][0]))[0]
-                        img_dir = os.path.join(opt['path']['val_images'], img_name)
-                        util.mkdir(img_dir)
 
-                        model.feed_data(val_data)
-                        model.test()
+                    # TODO ограничить размер валидации? тест из стандартного датасета из torchvision может по памяти не влезть
 
-                        visuals = model.get_current_visuals()
-                        # TODO fix
-                        sr_img = util.tensor2img(visuals['rlt'])  # uint8
-                        gt_img = util.tensor2img(visuals['GT'])  # uint8
+                    # save 25 samples generated from noise
+                    samples = make_grid(model.sample_images(25), nrow=5)
+                    util.save_img(samples, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
 
-                        # Save SR images for reference
-                        save_img_path = os.path.join(img_dir,
-                                                     '{:s}_{:d}.png'.format(img_name, current_step))
-                        util.save_img(sr_img, save_img_path)
+                    inc_true = []  # TODO тупо каждую сколько-то итераций считать одно и то же
+                    inc_art = []
+                    for i, val_data in enumerate(val_loader):  # 1 image in batch
+                        inc_true.append(predictor(val_data['image'].to(predictor_device)).cpu().numpy())
+                        inc_art.append(predictor(model.sample_images(25).to(predictor_device)).cpu().numpy())
+                    inc_true = np.concatenate(inc_true)
+                    inc_art = np.concatenate(inc_art)
+                    fid = frechet_distance(inc_true, inc_art)
 
-                        # calculate PSNR
-                        sr_img, gt_img = util.crop_border([sr_img, gt_img], opt['scale'])
-                        avg_psnr += util.calculate_psnr(sr_img, gt_img)
-                        pbar.update('Test {}'.format(img_name))
-
-                    avg_psnr = avg_psnr / idx
+                    # TODO compute FID
+                    prd = 0
 
                     # log
-                    logger.info('# Validation # PSNR: {:.4e}'.format(avg_psnr))
+                    logger.info('# Validation # FID: {:.4e}'.format(fid))
+                    logger.info('# Validation # PRD: {:.4e}'.format(prd))
+
                     # tensorboard logger
                     if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                        tb_logger.add_scalar('psnr', avg_psnr, current_step)
-                else:  # video restoration validation # TODO fix
-                    if opt['dist']:
-                        # multi-GPU testing
-                        psnr_rlt = {}  # with border and center frames
-                        if rank == 0:
-                            pbar = util.ProgressBar(len(val_set))
-                        for idx in range(rank, len(val_set), world_size):
-                            val_data = val_set[idx]
-                            val_data['LQs'].unsqueeze_(0)
-                            val_data['GT'].unsqueeze_(0)
-                            folder = val_data['folder']
-                            idx_d, max_idx = val_data['idx'].split('/')
-                            idx_d, max_idx = int(idx_d), int(max_idx)
-                            if psnr_rlt.get(folder, None) is None:
-                                psnr_rlt[folder] = torch.zeros(max_idx, dtype=torch.float32,
-                                                               device='cuda')
-                            # tmp = torch.zeros(max_idx, dtype=torch.float32, device='cuda')
-                            model.feed_data(val_data)
-                            model.test()
-                            visuals = model.get_current_visuals()
-                            rlt_img = util.tensor2img(visuals['rlt'])  # uint8
-                            gt_img = util.tensor2img(visuals['GT'])  # uint8
-                            # calculate PSNR
-                            psnr_rlt[folder][idx_d] = util.calculate_psnr(rlt_img, gt_img)
-
-                            if rank == 0:
-                                for _ in range(world_size):
-                                    pbar.update('Test {} - {}/{}'.format(folder, idx_d, max_idx))
-                        # # collect data
-                        for _, v in psnr_rlt.items():
-                            dist.reduce(v, 0)
-                        dist.barrier()
-
-                        if rank == 0:
-                            psnr_rlt_avg = {}
-                            psnr_total_avg = 0.
-                            for k, v in psnr_rlt.items():
-                                psnr_rlt_avg[k] = torch.mean(v).cpu().item()
-                                psnr_total_avg += psnr_rlt_avg[k]
-                            psnr_total_avg /= len(psnr_rlt)
-                            log_s = '# Validation # PSNR: {:.4e}:'.format(psnr_total_avg)
-                            for k, v in psnr_rlt_avg.items():
-                                log_s += ' {}: {:.4e}'.format(k, v)
-                            logger.info(log_s)
-                            if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                                tb_logger.add_scalar('psnr_avg', psnr_total_avg, current_step)
-                                for k, v in psnr_rlt_avg.items():
-                                    tb_logger.add_scalar(k, v, current_step)
-                    else:
-                        pbar = util.ProgressBar(len(val_loader))
-                        psnr_rlt = {}  # with border and center frames
-                        psnr_rlt_avg = {}
-                        psnr_total_avg = 0.
-                        for val_data in val_loader:
-                            folder = val_data['folder'][0]
-                            idx_d = val_data['idx'].item()
-                            # border = val_data['border'].item()
-                            if psnr_rlt.get(folder, None) is None:
-                                psnr_rlt[folder] = []
-
-                            model.feed_data(val_data)
-                            model.test()
-                            visuals = model.get_current_visuals()
-                            rlt_img = util.tensor2img(visuals['rlt'])  # uint8
-                            gt_img = util.tensor2img(visuals['GT'])  # uint8
-
-                            # calculate PSNR
-                            psnr = util.calculate_psnr(rlt_img, gt_img)
-                            psnr_rlt[folder].append(psnr)
-                            pbar.update('Test {} - {}'.format(folder, idx_d))
-                        for k, v in psnr_rlt.items():
-                            psnr_rlt_avg[k] = sum(v) / len(v)
-                            psnr_total_avg += psnr_rlt_avg[k]
-                        psnr_total_avg /= len(psnr_rlt)
-                        log_s = '# Validation # PSNR: {:.4e}:'.format(psnr_total_avg)
-                        for k, v in psnr_rlt_avg.items():
-                            log_s += ' {}: {:.4e}'.format(k, v)
-                        logger.info(log_s)
-                        if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                            tb_logger.add_scalar('psnr_avg', psnr_total_avg, current_step)
-                            for k, v in psnr_rlt_avg.items():
-                                tb_logger.add_scalar(k, v, current_step)
+                        tb_logger.add_scalar('fid', fid, current_step)
+                        tb_logger.add_scalar('prd', prd, current_step)
 
             #### save models and training states
             if current_step % opt['logger']['save_checkpoint_freq'] == 0:

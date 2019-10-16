@@ -24,7 +24,7 @@ encoder: # E
   nz: 256
 
 decoder: # D
-  which_model: glf_flow
+  which_model: glf_decoder
   img_size: 32
   in_ch: 3
   nz: 256
@@ -47,17 +47,17 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_E: !!float 1e-4
+  lr_E: !!float 1e-4 # 0 to freeze params
   weight_decay_E: 0
   beta1_E: 0.9
   beta2_E: 0.99
 
-  lr_D: !!float 1e-4
+  lr_D: !!float 1e-4 # 0 to freeze params
   weight_decay_D: 0
   beta1_D: 0.9
   beta2_D: 0.99
 
-  lr_F: !!float 1e-4
+  lr_F: !!float 1e-4  # 0 to freeze params
   weight_decay_F: 0
   beta1_F: 0.9
   beta2_F: 0.99
