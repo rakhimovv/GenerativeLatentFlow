@@ -1,18 +1,18 @@
-import os
-import math
 import argparse
-import random
 import logging
+import math
+import os
+import random
 
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from data.data_sampler import DistIterSampler
 
 import options.options as option
-from utils import util
 from data import create_dataloader, create_dataset
+from data.data_sampler import DistIterSampler
 from models import create_model
+from utils import util
 
 
 def init_dist(backend='nccl', **kwargs):
@@ -101,7 +101,7 @@ def main():
     dataset_ratio = 200  # enlarge the size of each epoch
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
-            train_set = create_dataset(dataset_opt)
+            train_set = create_dataset(dataset_opt, is_train=True)
             train_size = int(math.ceil(len(train_set) / dataset_opt['batch_size']))
             total_iters = int(opt['train']['niter'])
             total_epochs = int(math.ceil(total_iters / train_size))
@@ -117,7 +117,7 @@ def main():
                 logger.info('Total epochs needed: {:d} for iters {:,d}'.format(
                     total_epochs, total_iters))
         elif phase == 'val':
-            val_set = create_dataset(dataset_opt)
+            val_set = create_dataset(dataset_opt, is_train=False)
             val_loader = create_dataloader(val_set, dataset_opt, opt, None)
             if rank <= 0:
                 logger.info('Number of val images in [{:s}]: {:d}'.format(

@@ -1,5 +1,6 @@
 """create dataset and dataloader"""
 import logging
+
 import torch
 import torch.utils.data
 
@@ -25,17 +26,22 @@ def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
                                            pin_memory=False)
 
 
-def create_dataset(dataset_opt):
-    mode = dataset_opt['mode']
-    if mode == 'MNIST':
-        from data.LQ_dataset import LQDataset as D
-    elif mode == 'CIFAR10':
-        from data.LQGT_dataset import LQGTDataset as D
-    elif mode == 'CELEBA':
-        from data.LQGT_dataset import LQGTDataset as D
+def create_dataset(dataset_opt, is_train):
+    """
+    :param dataset_opt: dict, part of config corresponding to dataset
+    :param is_train: bool, train or test flag
+    :return:
+    """
+    name = dataset_opt['name']
+    if name == 'MNIST':
+        from torchvision.datasets import MNIST as D
+    elif name == 'Fashion':
+        from torchvision.datasets import FashionMNIST as D
+    elif name == 'CIFAR-10':
+        from torchvision.datasets import CIFAR10 as D
     else:
-        raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(mode))
-    dataset = D(dataset_opt)
+        raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
+    dataset = D(root=dataset_opt['root'], train=is_train, transform=None, target_transform=None, download=True)
 
     logger = logging.getLogger('base')
     logger.info('Dataset [{:s} - {:s}] is created.'.format(dataset.__class__.__name__,

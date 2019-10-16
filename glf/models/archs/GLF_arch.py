@@ -3,8 +3,9 @@ import torch.nn as nn
 
 from models.archs.arch_util import initialize_weights
 
+
 class Encoder(nn.Module):
-    def __init__(self, img_size, out_ch, nz):
+    def __init__(self, img_size, in_ch, nz):
         super().__init__()
         
         M = img_size // 4
@@ -160,25 +161,3 @@ class FlowNet(nn.Module):
             out = self.perms[-1-i].reverse(out)
             out = self.affine_layers[-1-i].reverse(out)
         return out
-    
-
-class GLF_original(nn.Module):
-    def __init__(self, img_size=28, out_ch=1, nz=20, hidden_size=64):
-        # (nz, hidden_size)
-        #     (20, 64)  - MNIST, FashionMNIST
-        #     (64, 256) - CIFAR-10, CelebA
-
-        super().__init__()
-        
-        self.encoder = Encoder(img_size, out_ch, nz)
-        self.decoder = Decoder(img_size, out_ch, nz)
-        self.flow = FlowNet(nz, hidden_size)
-
-    def forward(self, x):
-        # TODO put your code here
-        return x
-
-
-# class GLF_v1(nn.Module)
-# class GLF_v2(nn.Module)
-# class GLF_v3(nn.Module)
