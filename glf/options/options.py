@@ -1,42 +1,29 @@
+import logging
 import os
 import os.path as osp
-import logging
+
 import yaml
+
 from utils.util import OrderedYaml
+
 Loader, Dumper = OrderedYaml()
 
 
 def parse(opt_path, is_train=True):
     with open(opt_path, mode='r') as f:
         opt = yaml.load(f, Loader=Loader)
+
     # export CUDA_VISIBLE_DEVICES
     gpu_list = ','.join(str(x) for x in opt['gpu_ids'])
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_list
     print('export CUDA_VISIBLE_DEVICES=' + gpu_list)
 
     opt['is_train'] = is_train
-    if opt['distortion'] == 'sr':
-        scale = opt['scale']
 
     # datasets
     for phase, dataset in opt['datasets'].items():
         phase = phase.split('_')[0]
         dataset['phase'] = phase
-        if opt['distortion'] == 'sr':
-            dataset['scale'] = scale
-        is_lmdb = False
-        if dataset.get('dataroot_GT', None) is not None:
-            dataset['dataroot_GT'] = osp.expanduser(dataset['dataroot_GT'])
-            if dataset['dataroot_GT'].endswith('lmdb'):
-                is_lmdb = True
-        if dataset.get('dataroot_LQ', None) is not None:
-            dataset['dataroot_LQ'] = osp.expanduser(dataset['dataroot_LQ'])
-            if dataset['dataroot_LQ'].endswith('lmdb'):
-                is_lmdb = True
-        dataset['data_type'] = 'lmdb' if is_lmdb else 'img'
-        if dataset['mode'].endswith('mc'):  # for memcached
-            dataset['data_type'] = 'mc'
-            dataset['mode'] = dataset['mode'].replace('_mc', '')
 
     # path
     for key, path in opt['path'].items():
@@ -60,10 +47,6 @@ def parse(opt_path, is_train=True):
         results_root = osp.join(opt['path']['root'], 'results', opt['name'])
         opt['path']['results_root'] = results_root
         opt['path']['log'] = results_root
-
-    # network
-    if opt['distortion'] == 'sr':
-        opt['network_G']['scale'] = scale
 
     return opt
 
