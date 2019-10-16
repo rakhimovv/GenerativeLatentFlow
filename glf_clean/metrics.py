@@ -12,8 +12,8 @@ def frechet_distance(latent_true: np.ndarray, latent_artificial: np.ndarray) -> 
     assert np.isfinite(matrix_sqrt).all(), 'https://github.com/mseitzer/pytorch-fid/blob/master/fid_score.py'
     assert not np.iscomplexobj(matrix_sqrt), 'https://github.com/mseitzer/pytorch-fid/blob/master/fid_score.py'
 
-    euc_norm = np.linalg.norm(mu_true - mu_artificial, ord=2)
-    fid = euc_norm + np.trace(sigma_true) + np.trace(sigma_artificial) - 2 * np.trace(matrix_sqrt)
+    euc_norm_squared = np.linalg.norm(mu_true - mu_artificial, ord=2) ** 2
+    fid = euc_norm_squared + np.trace(sigma_true) + np.trace(sigma_artificial) - 2 * np.trace(matrix_sqrt)
     return float(fid)
 
 
