@@ -1,1 +1,1 @@
-from glf.metrics.metrics import frechet_distance, InceptionPredictor
+from .metrics import frechet_distance, InceptionPredictor

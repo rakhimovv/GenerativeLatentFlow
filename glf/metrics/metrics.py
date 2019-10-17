@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from glf.metrics.inception import InceptionV3
+from .inception import InceptionV3
 
 
 # Maps feature dimensionality to their output blocks indices
