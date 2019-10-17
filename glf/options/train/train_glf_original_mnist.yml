@@ -33,7 +33,7 @@ flow: # F
   which_model: FlowNet
   nz: 256
   hidden_size: 64
-  n_blocks: 4
+  nblocks: 4
 
 #### path
 path:
