@@ -40,9 +40,7 @@ path:
   pretrained_encoder: ~
   pretrained_decoder: ~
   pretrained_flow: ~
-  resume_state_encoder: ~
-  resume_state_decoder: ~
-  resume_state_flow: ~
+  resume_state: ~
   strict_load: true
 
 #### training settings: learning rate scheme, loss
