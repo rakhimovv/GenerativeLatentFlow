@@ -153,6 +153,7 @@ class FlowNet(nn.Module):
             logdets.append(logdet)
         out, logdet = self.affine_layers[-1](out)
         logdets.append(logdet)
+        logdets = torch.stack(logdets, dim=1)
         return out, logdets
     
     def reverse(self, x):
