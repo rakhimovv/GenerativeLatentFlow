@@ -8,7 +8,8 @@ from torch.nn.parallel import DataParallel, DistributedDataParallel
 import models.lr_scheduler as lr_scheduler
 import models.networks as networks
 from models.archs.vgg_arch import VGGLoss
-from .base_model import BaseModel
+from models.base_model import BaseModel
+from models.loss import NLLLoss
 
 logger = logging.getLogger('base')
 
@@ -61,7 +62,7 @@ class GenerativeModel(BaseModel):
 
             if train_opt['nll_weight'] is None:
                 raise ValueError('nll loss should be always in this version')
-            self.cri_nll = nn.L1Loss().to(self.device)  # F().to(device) # TODO FIX
+            self.cri_nll = NLLLoss(reduction='mean').to(self.device)  # F().to(device) # TODO FIX
             self.l_nll_w = train_opt['nll_weight']
 
             if train_opt['feature_weight'] > 0:
@@ -159,8 +160,8 @@ class GenerativeModel(BaseModel):
             l_total += l_fea
 
         # negative likelihood loss
-        noise_out = self.netF(z.detach())
-        l_nll = self.l_nll_w * self.cri_nll(noise_out)
+        noise_out, logdets = self.netF(z.detach())
+        l_nll = self.l_nll_w * self.cri_nll(noise_out, logdets)
         l_total += l_nll
 
         l_total.backward()
