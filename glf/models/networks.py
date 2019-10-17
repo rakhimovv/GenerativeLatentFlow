@@ -1,7 +1,4 @@
-import torch
-
 import models.archs.GLF_arch as GLF_arch
-import models.archs.vgg_arch as discriminator_vgg_arch
 
 
 # Encoder
@@ -50,18 +47,3 @@ def define_flow(opt):
         raise NotImplementedError('Flow model [{:s}] not recognized'.format(which_model))
 
     return netD
-
-
-# Feature extractor used for perceptual loss
-def define_VGG(opt, use_bn=False):
-    gpu_ids = opt['gpu_ids']
-    device = torch.device('cuda' if gpu_ids else 'cpu')
-    # PyTorch pretrained VGG19-54, before ReLU.
-    if use_bn:
-        feature_layer = 49
-    else:
-        feature_layer = 34
-    netVGG = discriminator_vgg_arch.VGGFeatureExtractor(feature_layer=feature_layer, use_bn=use_bn,
-                                                        use_input_norm=True, device=device)
-    netVGG.eval()  # No need to train
-    return netVGG

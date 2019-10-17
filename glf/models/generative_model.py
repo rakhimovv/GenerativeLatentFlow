@@ -136,7 +136,7 @@ class GenerativeModel(BaseModel):
         self.load()  # load G, D, F if needed
 
     def feed_data(self, data, need_GT=True):
-        self.image = data['image'].to(self.device)
+        self.image = data[0].to(self.device)
         if need_GT:
             self.image_gt = self.image
 
@@ -209,14 +209,14 @@ class GenerativeModel(BaseModel):
 
         if self.is_train:
             if self.cri_fea:  # F, Perceptual Network
-                netVGG = self.cri_fea.vgg
-                s, n = self.get_network_description(netVGG)
-                if isinstance(netVGG, nn.DataParallel) or isinstance(
-                        netVGG, DistributedDataParallel):
-                    net_struc_str = '{} - {}'.format(netVGG.__class__.__name__,
-                                                     netVGG.module.__class__.__name__)
+
+                if isinstance(self.cri_fea, nn.DataParallel) or isinstance(self.cri_fea, DistributedDataParallel):
+                    net_struc_str = '{} - {}'.format(self.cri_fea.__class__.__name__,
+                                                     self.cri_fea.module.__class__.__name__)
+                    s, n = self.get_network_description(self.cri_fea.module.vgg)
                 else:
-                    net_struc_str = '{}'.format(netVGG.__class__.__name__)
+                    net_struc_str = '{}'.format(self.cri_fea.__class__.__name__)
+                    s, n = self.get_network_description(self.cri_fea.vgg)
                 if self.rank <= 0:
                     logger.info('Network VGG structure: {}, with parameters: {:,d}'.format(
                         net_struc_str, n))
