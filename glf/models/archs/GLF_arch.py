@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128*M*M, 1024),
+            nn.Linear(128*M*M, 1024, bias=False),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
             nn.Linear(1024, nz)
@@ -44,10 +44,10 @@ class Decoder(nn.Module):
         self.M = M
         
         self.fc = nn.Sequential(
-            nn.Linear(nz, 1024),
+            nn.Linear(nz, 1024, bias=False),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
-            nn.Linear(1024, 128*M*M),
+            nn.Linear(1024, 128*M*M, bias=False),
             nn.BatchNorm1d(128*M*M),
             nn.ReLU()
         )
