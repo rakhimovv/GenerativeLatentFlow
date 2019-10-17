@@ -60,8 +60,8 @@ class VGGLoss(nn.Module):
         self.l1_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, input, target):
-        features_input = self.fe(input)
-        features_target = self.fe(target)
+        features_input = self.vgg(input)
+        features_target = self.vgg(target)
         perceptual_loss = 0
         for i in range(len(self.layer_ids)):
             perceptual_loss += self.l1_loss(features_input[i], features_target[i]) / len(self.layer_ids)
