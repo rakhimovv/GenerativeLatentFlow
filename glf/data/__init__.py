@@ -39,9 +39,16 @@ def create_dataset(dataset_opt, is_train):
         from torchvision.datasets import FashionMNIST as D
     elif name == 'CIFAR-10':
         from torchvision.datasets import CIFAR10 as D
+    elif name == 'CelebA':
+        from torchvision.datasets import CelebA as D
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
-    dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=None, target_transform=None, download=True)
+
+    if name == 'CelebA':
+        dataset = D(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type=None,
+                    transform=None, target_transform=None, download=True)
+    else:
+        dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=None, target_transform=None, download=True)
 
     logger = logging.getLogger('base')
     logger.info('Dataset [{:s} - {:s}] is created.'.format(dataset.__class__.__name__,
