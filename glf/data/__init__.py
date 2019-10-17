@@ -3,6 +3,7 @@ import logging
 
 import torch
 import torch.utils.data
+from torchvision import transforms
 
 
 def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
@@ -46,9 +47,10 @@ def create_dataset(dataset_opt, is_train):
 
     if name == 'CelebA':
         dataset = D(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type=None,
-                    transform=None, target_transform=None, download=True)
+                    transform=transforms.ToTensor(), target_transform=None, download=True)
     else:
-        dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=None, target_transform=None, download=True)
+        dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=transforms.ToTensor(),
+                    target_transform=None, download=True)
 
     logger = logging.getLogger('base')
     logger.info('Dataset [{:s} - {:s}] is created.'.format(dataset.__class__.__name__,
