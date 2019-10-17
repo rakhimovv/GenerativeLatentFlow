@@ -8,7 +8,7 @@ class NLLLoss(nn.Module):
         self.reduction = reduction
     
     def forward(self, noise_out, logdets):
-        loss = torch.sum(noise_out*noise_out, dim=1) - torch.sum(logdets, dim=1)
+        loss = 0.5*torch.sum(noise_out*noise_out, dim=1) - torch.sum(logdets, dim=1)
         
         if self.reduction == 'mean':
             loss = loss.mean()
