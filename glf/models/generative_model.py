@@ -160,7 +160,7 @@ class GenerativeModel(BaseModel):
 
         # negative likelihood loss
         noise_out = self.netF(z.detach())
-        l_nll = self.l_fea_w * self.cri_nll(noise_out)
+        l_nll = self.l_nll_w * self.cri_nll(noise_out)
         l_total += l_nll
 
         l_total.backward()
