@@ -7,6 +7,7 @@ from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 import models.lr_scheduler as lr_scheduler
 import models.networks as networks
+from models.archs.vgg_arch import VGGLoss
 from .base_model import BaseModel
 
 logger = logging.getLogger('base')
@@ -64,24 +65,15 @@ class GenerativeModel(BaseModel):
             self.l_nll_w = train_opt['nll_weight']
 
             if train_opt['feature_weight'] > 0:
-                l_fea_type = train_opt['feature_criterion']
-                if l_fea_type == 'l1':
-                    self.cri_fea = nn.L1Loss(reduction='mean').to(self.device)
-                elif l_fea_type == 'l2':
-                    self.cri_fea = nn.MSELoss(reduction='mean').to(self.device)
+                self.cri_fea = VGGLoss().to(self.device)
+                if opt['dist']:
+                    pass  # do not need to use DistributedDataParallel for VGGLoss
                 else:
-                    raise NotImplementedError('Loss type [{:s}] not recognized.'.format(l_fea_type))
+                    self.cri_fea = DataParallel(self.cri_fea)
                 self.l_fea_w = train_opt['feature_weight']
             else:
                 logger.info('Remove feature loss.')
                 self.cri_fea = None
-
-            if self.cri_fea:
-                self.netVGG = networks.define_VGG(opt, use_bn=False).to(self.device)
-                if opt['dist']:
-                    pass  # do not need to use DistributedDataParallel for netF
-                else:
-                    self.netVGG = DataParallel(self.netVGG)
 
             # optimizers
             if train_opt['lr_E'] > 0:
@@ -163,9 +155,7 @@ class GenerativeModel(BaseModel):
             l_total += l_pix
 
         if self.cri_fea:  # feature loss
-            gt_fea = self.netVGG(self.image_gt).detach()
-            reconstructed_fea = self.netVGG(reconstructed)
-            l_fea = self.l_fea_w * self.cri_fea(reconstructed_fea, gt_fea)
+            l_fea = self.l_fea_w * self.cri_fea(reconstructed, self.image_gt)
             l_total += l_fea
 
         # negative likelihood loss
@@ -219,13 +209,14 @@ class GenerativeModel(BaseModel):
 
         if self.is_train:
             if self.cri_fea:  # F, Perceptual Network
-                s, n = self.get_network_description(self.netVGG)
-                if isinstance(self.netVGG, nn.DataParallel) or isinstance(
-                        self.netVGG, DistributedDataParallel):
-                    net_struc_str = '{} - {}'.format(self.netVGG.__class__.__name__,
-                                                     self.netVGG.module.__class__.__name__)
+                netVGG = self.cri_fea.vgg
+                s, n = self.get_network_description(netVGG)
+                if isinstance(netVGG, nn.DataParallel) or isinstance(
+                        netVGG, DistributedDataParallel):
+                    net_struc_str = '{} - {}'.format(netVGG.__class__.__name__,
+                                                     netVGG.module.__class__.__name__)
                 else:
-                    net_struc_str = '{}'.format(self.netVGG.__class__.__name__)
+                    net_struc_str = '{}'.format(netVGG.__class__.__name__)
                 if self.rank <= 0:
                     logger.info('Network VGG structure: {}, with parameters: {:,d}'.format(
                         net_struc_str, n))

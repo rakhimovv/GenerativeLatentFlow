@@ -70,9 +70,8 @@ train:
   lr_gamma: 0.5
 
   pixel_criterion: l1
-  pixel_weight: !!float 1e-2
+  pixel_weight: !!float 1
 
-  feature_criterion: l1
   feature_weight: 1
 
   nll_weight: 1
