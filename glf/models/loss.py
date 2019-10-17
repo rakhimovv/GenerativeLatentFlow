@@ -5,7 +5,9 @@ import torch.nn as nn
 class NLLLoss(nn.Module):
     def __init__(self, reduction='mean'):
         super().__init__()
-        self.reduction = reduction
+        if reduction.lower() not in ['mean', 'sum', 'none']:
+            raise NotImplementedError
+        self.reduction = reduction.lower()
     
     def forward(self, noise_out, logdets):
         loss = 0.5*torch.sum(noise_out*noise_out, dim=1) - torch.sum(logdets, dim=1)
@@ -14,10 +16,8 @@ class NLLLoss(nn.Module):
             loss = loss.mean()
         elif self.reduction == 'sum':
             loss = loss.sum()
-        elif self.reduction.lower() == 'none':
+        else self.reduction == 'none':
             pass
-        else:
-            raise NotImplementedError
         return loss
 
 class CharbonnierLoss(nn.Module):
