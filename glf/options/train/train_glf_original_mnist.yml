@@ -1,6 +1,6 @@
 #### general settings
-name: glf_original_nf64_mnist # name of the experiment
-use_tb_logger: true # use tensorboard or not
+name: glf_original_mnist # name of the experiment
+use_tb_logger: false # use tensorboard or not
 model: generative
 gpu_ids: [2] # e.g. [0,1,2,5]
 
@@ -8,25 +8,25 @@ gpu_ids: [2] # e.g. [0,1,2,5]
 datasets:
   train:
     name: MNIST
-    dataroot: 'datasets/mnist'
+    dataroot: ../datasets/mnist
     use_shuffle: true
     n_workers: 6  # per GPU
-    batch_size: 16
+    batch_size: 256
   val:
     name: MNIST
-    dataroot: 'datasets/mnist'
+    dataroot: ../datasets/mnist
 
 #### network structures
 encoder: # E
   which_model: glf_encoder
   img_size: 32
-  in_ch: 3
+  in_ch: 1
   nz: 256
 
 decoder: # D
   which_model: glf_decoder
   img_size: 32
-  in_ch: 3
+  out_ch: 1
   nz: 256
 
 flow: # F
@@ -47,26 +47,26 @@ path:
 
 #### training settings: learning rate scheme, loss
 train:
-  lr_E: !!float 1e-4 # 0 to freeze params
+  lr_E: !!float 1e-3 # 0 to freeze params
   weight_decay_E: 0
   beta1_E: 0.9
   beta2_E: 0.99
 
-  lr_D: !!float 1e-4 # 0 to freeze params
+  lr_D: !!float 1e-3 # 0 to freeze params
   weight_decay_D: 0
   beta1_D: 0.9
   beta2_D: 0.99
 
-  lr_F: !!float 1e-4  # 0 to freeze params
-  weight_decay_F: 0
+  lr_F: !!float 1e-3  # 0 to freeze params
+  weight_decay_F: !!float 2e-5
   beta1_F: 0.9
   beta2_F: 0.99
 
-  niter: 400000
+  niter: 23500 # ~100 epochs
 
   lr_scheme: MultiStepLR
   warmup_iter: -1  # no warm up
-  lr_steps: [50000, 100000, 200000, 300000]
+  lr_steps: [11750] # after every 50 epochs
   lr_gamma: 0.5
 
   pixel_criterion: l1

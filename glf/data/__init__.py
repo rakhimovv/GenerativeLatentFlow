@@ -41,7 +41,7 @@ def create_dataset(dataset_opt, is_train):
         from torchvision.datasets import CIFAR10 as D
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
-    dataset = D(root=dataset_opt['root'], train=is_train, transform=None, target_transform=None, download=True)
+    dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=None, target_transform=None, download=True)
 
     logger = logging.getLogger('base')
     logger.info('Dataset [{:s} - {:s}] is created.'.format(dataset.__class__.__name__,

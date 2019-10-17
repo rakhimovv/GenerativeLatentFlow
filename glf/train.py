@@ -50,6 +50,7 @@ def main():
         rank = torch.distributed.get_rank()
 
     #### loading resume state if exists
+    # TODO check resume state
     if opt['path'].get('resume_state', None):
         # distributed resuming: all load into default GPU
         device_id = torch.cuda.current_device()
@@ -65,7 +66,7 @@ def main():
             util.mkdir_and_rename(
                 opt['path']['experiments_root'])  # rename experiment folder if exists
             util.mkdirs((path for key, path in opt['path'].items() if not key == 'experiments_root'
-                         and 'pretrain_model' not in key and 'resume' not in key))
+                         and 'pretrained_' not in key and 'resume' not in key))
 
         # config loggers. Before it, the log will not work
         util.setup_logger('base', opt['path']['log'], 'train_' + opt['name'], level=logging.INFO,
@@ -185,7 +186,7 @@ def main():
                     # TODO ограничить размер валидации? тест из стандартного датасета из torchvision может по памяти не влезть
 
                     # save 25 samples generated from noise
-                    samples = make_grid(model.sample_images(25), nrow=5)
+                    samples = make_grid(model.sample_images(60), nrow=6)
                     util.save_img(samples, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
 
                     inc_true = []  # TODO тупо каждую сколько-то итераций считать одно и то же
