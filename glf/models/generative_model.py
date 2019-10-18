@@ -179,8 +179,11 @@ class GenerativeModel(BaseModel):
     def sample_images(self, n=25):
         self.netF.eval()
         with torch.no_grad():
-            noise = torch.randn(n, 3, 100, 100)
-            sample = self.netF.reverse(noise).detach().float().cpu()
+            noise = torch.randn(n, 3, 100, 100).to(self.device)
+            if isinstance(self.netF, nn.DataParallel) or isinstance(self.netF, DistributedDataParallel):
+                sample = self.netF.module.reverse(noise).detach().float().cpu()
+            else:
+                sample = self.netF.reverse(noise).detach().float().cpu()
         self.netF.train()
         return sample
 
