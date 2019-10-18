@@ -75,14 +75,15 @@ def main():
         logger.info(option.dict2str(opt))
         # tensorboard logger
         if opt['use_tb_logger'] and 'debug' not in opt['name']:
-            version = float(torch.__version__[0:3])
-            if version >= 1.1:  # PyTorch 1.1
-                from torch.utils.tensorboard import SummaryWriter
-            else:
-                logger.info(
-                    'You are using PyTorch {}. Tensorboard will use [tensorboardX]'.format(version))
-                from tensorboardX import SummaryWriter
-            tb_logger = SummaryWriter(log_dir='../tb_logger/' + opt['name'])
+            # version = float(torch.__version__[0:3])
+            # if version >= 1.1:  # PyTorch 1.1
+            #     from torch.utils.tensorboard import SummaryWriter
+            # else:
+            #     logger.info(
+            #         'You are using PyTorch {}. Tensorboard will use [tensorboardX]'.format(version))
+            #     from tensorboardX import SummaryWriter
+            from tensorboardX import SummaryWriter
+            tb_logger = SummaryWriter(log_dir='tb_logger/' + opt['name'])
     else:
         util.setup_logger('base', opt['path']['log'], 'train', level=logging.INFO, screen=True)
         logger = logging.getLogger('base')
