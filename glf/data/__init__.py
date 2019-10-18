@@ -1,9 +1,33 @@
 """create dataset and dataloader"""
 import logging
+import os
 
 import torch
 import torch.utils.data
+import numpy as np
+from torch.utils.data import TensorDataset
 from torchvision import transforms
+
+from glf.data.dots import gen_image_count
+
+
+def _create_dots(root, is_train, num_objects=3, num_samples=1000):
+    filename = 'train' if is_train else 'test'
+    path_fo_file = os.path.join(root, filename)
+
+    if not os.path.exists(path_fo_file):
+        images = []
+        for i in range(num_samples):
+            new_img = gen_image_count(num_object=num_objects).astype(np.float32) / 255.0
+            images.append(new_img)
+
+        images = np.stack(images, axis=0).transpose((0, 3, 1, 2))
+        np.save(path_fo_file, images)
+    else:
+        images = np.load(path_fo_file)
+
+    dataset = TensorDataset(torch.from_numpy(images), torch.from_numpy(np.array([num_objects] * num_samples)))
+    return dataset
 
 
 def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
@@ -42,12 +66,16 @@ def create_dataset(dataset_opt, is_train):
         from torchvision.datasets import CIFAR10 as D
     elif name == 'CelebA':
         from torchvision.datasets import CelebA as D
+    elif name == 'dots':
+        pass
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
 
     if name == 'CelebA':
         dataset = D(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type=None,
                     transform=transforms.ToTensor(), target_transform=None, download=True)
+    elif name == 'dots':
+        dataset = _create_dots(root=dataset_opt['dataroot'], is_train=is_train)
     else:
         dataset = D(root=dataset_opt['dataroot'], train=is_train, transform=transforms.ToTensor(),
                     target_transform=None, download=True)
