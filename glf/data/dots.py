@@ -1,3 +1,5 @@
+# https://github.com/ermongroup/BiasAndGeneralization/blob/master/DotsAndPie/dataset/generate/dots_generator.py
+
 import matplotlib
 matplotlib.use('Agg')
 import numpy as np
