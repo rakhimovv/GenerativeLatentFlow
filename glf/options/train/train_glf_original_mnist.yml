@@ -1,8 +1,8 @@
 #### general settings
 name: glf_original_mnist # name of the experiment
-use_tb_logger: false # use tensorboard or not
+use_tb_logger: true # use tensorboard or not
 model: generative
-gpu_ids: [2] # e.g. [0,1,2,5]
+gpu_ids: [1,2] # e.g. [0,1,2,5]
 
 #### datasets
 datasets:
@@ -10,7 +10,7 @@ datasets:
     name: MNIST
     dataroot: datasets/mnist
     use_shuffle: true
-    n_workers: 6  # per GPU
+    n_workers: 8  # per GPU
     batch_size: 256
   val:
     name: MNIST
@@ -60,11 +60,11 @@ train:
   beta1_F: 0.9
   beta2_F: 0.99
 
-  niter: 23500 # ~100 epochs
+  niter: 23500 # =100 epochs
 
   lr_scheme: MultiStepLR
   warmup_iter: -1  # no warm up
-  lr_steps: [11750] # after every 50 epochs
+  lr_steps: [11750] # after 50 epochs
   lr_gamma: 0.5
 
   pixel_criterion: l1
@@ -75,9 +75,9 @@ train:
   nll_weight: 1
 
   manual_seed: 10
-  val_freq: !!float 1
+  val_freq: !!float 10000000
 
 #### logger
 logger:
-  print_freq: 1
+  print_freq: 100
   save_checkpoint_freq: !!float 1e4
