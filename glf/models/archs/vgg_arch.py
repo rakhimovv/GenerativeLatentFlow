@@ -57,6 +57,7 @@ class VGGLoss(nn.Module):
         super().__init__()
         self.layer_ids = (2, 7, 12, 21, 30)
         self.vgg = VGGFeatureExtractor(layer_ids=self.layer_ids)
+        self.vgg.eval()
         self.l1_loss = nn.L1Loss(reduction='mean')
 
     def forward(self, input, target):
