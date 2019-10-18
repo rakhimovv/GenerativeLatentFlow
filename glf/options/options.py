@@ -4,7 +4,7 @@ import os.path as osp
 
 import yaml
 
-from utils.util import OrderedYaml
+from glf.utils.util import OrderedYaml
 
 Loader, Dumper = OrderedYaml()
 
@@ -14,7 +14,7 @@ def parse(opt_path, is_train=True):
         opt = yaml.load(f, Loader=Loader)
 
     # export CUDA_VISIBLE_DEVICES
-    gpu_list = ','.join(str(x) for x in opt['gpu_ids'])
+    gpu_list = "" if opt['gpu_ids'] is None else ','.join(str(x) for x in opt['gpu_ids'])
     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_list
     print('export CUDA_VISIBLE_DEVICES=' + gpu_list)
 

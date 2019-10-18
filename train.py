@@ -10,12 +10,12 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torchvision.utils import make_grid
 
-import options.options as option
-from data import create_dataloader, create_dataset
-from data.data_sampler import DistIterSampler
-from metrics import InceptionPredictor, frechet_distance
-from models import create_model
-from utils import util
+import glf.options.options as option
+from glf.data import create_dataloader, create_dataset
+from glf.data.data_sampler import DistIterSampler
+from glf.metrics import InceptionPredictor, frechet_distance
+from glf.models import create_model
+from glf.utils import util
 
 
 def init_dist(backend='nccl', **kwargs):

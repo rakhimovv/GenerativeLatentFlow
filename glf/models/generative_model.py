@@ -5,11 +5,11 @@ import torch
 import torch.nn as nn
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 
-import models.lr_scheduler as lr_scheduler
-import models.networks as networks
-from models.archs.vgg_arch import VGGLoss
-from models.base_model import BaseModel
-from models.loss import NLLLoss
+import glf.models.lr_scheduler as lr_scheduler
+import glf.models.networks as networks
+from glf.models.archs.vgg_arch import VGGLoss
+from glf.models.base_model import BaseModel
+from glf.models.loss import NLLLoss
 
 logger = logging.getLogger('base')
 

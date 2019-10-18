@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from models.archs.arch_util import initialize_weights
+from glf.models.archs.arch_util import initialize_weights
 
 
 class Encoder(nn.Module):

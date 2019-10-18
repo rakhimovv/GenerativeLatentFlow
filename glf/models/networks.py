@@ -1,4 +1,4 @@
-import models.archs.GLF_arch as GLF_arch
+import glf.models.archs.GLF_arch as GLF_arch
 
 
 # Encoder
