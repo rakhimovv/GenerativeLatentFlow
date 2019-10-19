@@ -2,9 +2,9 @@
 import logging
 import os
 
+import numpy as np
 import torch
 import torch.utils.data
-import numpy as np
 from torch.utils.data import TensorDataset
 from torchvision import transforms
 
@@ -72,6 +72,7 @@ def create_dataset(dataset_opt, is_train):
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
 
     if name == 'CelebA':
+        # TODO add center crop to 160 × 160 and then resize to 64×64
         dataset = D(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type=None,
                     transform=transforms.ToTensor(), target_transform=None, download=True)
     elif name == 'dots':

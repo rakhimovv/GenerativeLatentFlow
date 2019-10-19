@@ -27,7 +27,8 @@ class GenerativeModel(BaseModel):
         # DEFINE NETWORKS
         self.netE = networks.define_encoder(opt).to(self.device)
         self.netD = networks.define_decoder(opt).to(self.device)
-        self.netF = networks.define_flow(opt).to(self.device)
+        self.netF, self.nz = networks.define_flow(opt)
+        self.netF.to(self.device)
         if opt['dist']:
             self.netE = DistributedDataParallel(self.netE, device_ids=[torch.cuda.current_device()])
             self.netD = DistributedDataParallel(self.netD, device_ids=[torch.cuda.current_device()])
@@ -178,13 +179,15 @@ class GenerativeModel(BaseModel):
 
     def sample_images(self, n=25):
         self.netF.eval()
+        self.netD.eval()
         with torch.no_grad():
-            noise = torch.randn(n, 3, 100, 100).to(self.device)
+            noise = torch.randn(n, self.nz).to(self.device)
             if isinstance(self.netF, nn.DataParallel) or isinstance(self.netF, DistributedDataParallel):
-                sample = self.netF.module.reverse(noise).detach().float().cpu()
+                sample = self.netD(self.netF.module.reverse(noise)).detach().float().cpu()
             else:
-                sample = self.netF.reverse(noise).detach().float().cpu()
+                sample = self.netD(self.netF.reverse(noise)).detach().float().cpu()
         self.netF.train()
+        self.netD.train()
         return sample
 
     # def test(self):

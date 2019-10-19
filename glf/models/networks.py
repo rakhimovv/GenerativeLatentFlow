@@ -54,4 +54,4 @@ def define_flow(opt):
     else:
         raise NotImplementedError('Flow model [{:s}] not recognized'.format(which_model))
 
-    return netD
+    return netD, opt_net['nz']

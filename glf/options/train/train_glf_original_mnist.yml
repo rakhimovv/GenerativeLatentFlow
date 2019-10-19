@@ -75,9 +75,9 @@ train:
   nll_weight: 1
 
   manual_seed: 10
-  val_freq: !!float 10000000
+  val_freq: !!float 1000
 
 #### logger
 logger:
   print_freq: 100
-  save_checkpoint_freq: !!float 1e4
+  save_checkpoint_freq: ~ #!!float 1e4

@@ -4,7 +4,6 @@ import math
 import os
 import random
 
-import numpy as np
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -13,9 +12,10 @@ from torchvision.utils import make_grid
 import glf.options.options as option
 from glf.data import create_dataloader, create_dataset
 from glf.data.data_sampler import DistIterSampler
-from glf.metrics import InceptionPredictor, frechet_distance
+from glf.metrics import InceptionPredictor
 from glf.models import create_model
 from glf.utils import util
+from utils.util import tensor2img
 
 
 def init_dist(backend='nccl', **kwargs):
@@ -184,35 +184,37 @@ def main():
                 if rank <= 0:
                     # does not support multi-GPU validation
 
-                    # TODO ограничить размер валидации? тест из стандартного датасета из torchvision может по памяти не влезть
-
                     # save 25 samples generated from noise
-                    samples = make_grid(model.sample_images(60), nrow=6)
-                    util.save_img(samples, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
+                    samples = model.sample_images(60)
+                    grid = make_grid(samples, nrow=6)
+                    grid = tensor2img(grid)
+                    util.save_img(grid, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
+                    del samples, grid
 
-                    inc_true = []  # TODO тупо каждую сколько-то итераций считать одно и то же
-                    inc_art = []
-                    for i, val_data in enumerate(val_loader):  # 1 image in batch
-                        inc_true.append(predictor(val_data['image'].to(predictor_device)).cpu().numpy())
-                        inc_art.append(predictor(model.sample_images(25).to(predictor_device)).cpu().numpy())
-                    inc_true = np.concatenate(inc_true)
-                    inc_art = np.concatenate(inc_art)
-                    fid = frechet_distance(inc_true, inc_art)
-
-                    # TODO compute FID
-                    prd = 0
-
-                    # log
-                    logger.info('# Validation # FID: {:.4e}'.format(fid))
-                    logger.info('# Validation # PRD: {:.4e}'.format(prd))
-
-                    # tensorboard logger
-                    if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                        tb_logger.add_scalar('fid', fid, current_step)
-                        tb_logger.add_scalar('prd', prd, current_step)
+                    # TODO ограничить размер валидации? тест из стандартного датасета из torchvision может по памяти не влезть
+                    # inc_true = []  # TODO тупо каждую сколько-то итераций считать одно и то же
+                    # inc_art = []
+                    # for i, val_data in enumerate(val_loader):  # 1 image in batch
+                    #     inc_true.append(predictor(val_data['image'].to(predictor_device)).cpu().numpy())
+                    #     inc_art.append(predictor(model.sample_images(25).to(predictor_device)).cpu().numpy())
+                    # inc_true = np.concatenate(inc_true)
+                    # inc_art = np.concatenate(inc_art)
+                    # fid = frechet_distance(inc_true, inc_art)
+                    #
+                    # # TODO compute FID
+                    # prd = 0
+                    #
+                    # # log
+                    # logger.info('# Validation # FID: {:.4e}'.format(fid))
+                    # logger.info('# Validation # PRD: {:.4e}'.format(prd))
+                    #
+                    # # tensorboard logger
+                    # if opt['use_tb_logger'] and 'debug' not in opt['name']:
+                    #     tb_logger.add_scalar('fid', fid, current_step)
+                    #     tb_logger.add_scalar('prd', prd, current_step)
 
             #### save models and training states
-            if current_step % opt['logger']['save_checkpoint_freq'] == 0:
+            if opt['logger']['save_checkpoint_freq'] and current_step % opt['logger']['save_checkpoint_freq'] == 0:
                 if rank <= 0:
                     logger.info('Saving models and training states.')
                     model.save(current_step)
