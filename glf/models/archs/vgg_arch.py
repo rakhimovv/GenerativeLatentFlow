@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision
+from torch.nn.parallel import DataParallel
 
 
 class VGGFeatureExtractor(nn.Module):
@@ -56,7 +57,7 @@ class VGGLoss(nn.Module):
     def __init__(self):
         super().__init__()
         self.layer_ids = (2, 7, 12, 21, 30)
-        self.vgg = VGGFeatureExtractor(layer_ids=self.layer_ids)
+        self.vgg = DataParallel(VGGFeatureExtractor(layer_ids=self.layer_ids))
         self.vgg.eval()
         self.l1_loss = nn.L1Loss(reduction='mean')
 
@@ -67,3 +68,11 @@ class VGGLoss(nn.Module):
         for i in range(len(self.layer_ids)):
             perceptual_loss += self.l1_loss(features_input[i], features_target[i]) / len(self.layer_ids)
         return perceptual_loss
+
+
+def test():
+    img1 = torch.rand(256, 3, 32, 32)
+    img2 = torch.rand(256, 3, 32, 32)
+    vgg_loss = VGGLoss()
+    result = vgg_loss(img1, img2)
+    print(result, result.shape)

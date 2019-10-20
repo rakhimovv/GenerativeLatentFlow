@@ -68,10 +68,6 @@ class GenerativeModel(BaseModel):
 
             if train_opt['feature_weight'] > 0:
                 self.cri_fea = VGGLoss().to(self.device)
-                if opt['dist']:
-                    pass  # do not need to use DistributedDataParallel for VGGLoss
-                else:
-                    self.cri_fea = DataParallel(self.cri_fea)
                 self.l_fea_w = train_opt['feature_weight']
             else:
                 logger.info('Remove feature loss.')
@@ -214,20 +210,18 @@ class GenerativeModel(BaseModel):
                 logger.info('Network {} structure: {}, with parameters: {:,d}'.format(name, net_struc_str, n))
                 logger.info(s)
 
-        if self.is_train:
-            if self.cri_fea:  # F, Perceptual Network
-
-                if isinstance(self.cri_fea, nn.DataParallel) or isinstance(self.cri_fea, DistributedDataParallel):
-                    net_struc_str = '{} - {}'.format(self.cri_fea.__class__.__name__,
-                                                     self.cri_fea.module.__class__.__name__)
-                    s, n = self.get_network_description(self.cri_fea.module.vgg)
-                else:
-                    net_struc_str = '{}'.format(self.cri_fea.__class__.__name__)
-                    s, n = self.get_network_description(self.cri_fea.vgg)
-                if self.rank <= 0:
-                    logger.info('Network VGG structure: {}, with parameters: {:,d}'.format(
-                        net_struc_str, n))
-                    logger.info(s)
+        if self.is_train and self.cri_fea:
+            vgg_net = self.cri_fea.vgg
+            s, n = self.get_network_description(vgg_net)
+            if isinstance(vgg_net, nn.DataParallel) or isinstance(vgg_net, DistributedDataParallel):
+                net_struc_str = '{} - {}'.format(vgg_net.__class__.__name__,
+                                                 vgg_net.module.__class__.__name__)
+            else:
+                net_struc_str = '{}'.format(vgg_net.__class__.__name__)
+            if self.rank <= 0:
+                logger.info('Network VGG structure: {}, with parameters: {:,d}'.format(
+                    net_struc_str, n))
+                logger.info(s)
 
     def load(self):
         load_path_E = self.opt['path']['pretrained_encoder']
