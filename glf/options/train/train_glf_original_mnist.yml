@@ -60,11 +60,11 @@ train:
   beta1_F: 0.9
   beta2_F: 0.99
 
-  niter: 23500 # =100 epochs
+  niter: 23400 # =100 epochs
 
   lr_scheme: MultiStepLR
   warmup_iter: -1  # no warm up
-  lr_steps: [11750] # after 50 epochs
+  lr_steps: [11700] # after 50 epochs
   lr_gamma: 0.5
 
   pixel_criterion: l1
