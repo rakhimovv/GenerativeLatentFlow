@@ -12,8 +12,7 @@ class Encoder(nn.Module):
         
         # We use kernel size 3x3 instead of 4x4 as claimed by the original authors
         self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, 64, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(in_ch, 64, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),  
             nn.BatchNorm2d(128),
@@ -88,7 +87,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, out_ch, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.ConvTranspose2d(64, out_ch, kernel_size=4, stride=2, padding=1),
             nn.Sigmoid()
         )
         
