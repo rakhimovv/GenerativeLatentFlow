@@ -133,6 +133,17 @@ class GenerativeModel(BaseModel):
         self.print_network()  # print networks structure
         self.load()  # load G, D, F if needed
 
+        # CHECK THAT FLOW WORKS CORRECTLY
+        with torch.no_grad():
+            test_input = torch.randn((2, self.nz)).to(self.device)
+            test_output, test_logdet = self.netF(test_input)
+            if isinstance(self.netF, nn.DataParallel) or isinstance(self.netF, DistributedDataParallel):
+                test_input2 = self.netF.module.reverse(test_output)
+            else:
+                test_input2 = self.netF.reverse(test_output)
+            assert torch.allclose(test_input, test_input2), 'Flow model is incorrect'
+            del test_input, test_output, test_input2, test_logdet
+
     def feed_data(self, data, need_GT=True):
         self.image = data[0].to(self.device)
         if need_GT:
