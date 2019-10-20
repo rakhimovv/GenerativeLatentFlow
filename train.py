@@ -180,11 +180,12 @@ def main():
                 if rank <= 0:
                     logger.info(message)
             #### validation
-            if opt['datasets'].get('val', None) and current_step % opt['train']['val_freq'] == 0:
+            if opt['datasets'].get('val', None) and (
+                    current_step % opt['train']['val_freq'] == 0 or current_step == total_iters - 1):
                 if rank <= 0:
                     # does not support multi-GPU validation
 
-                    # save 25 samples generated from noise
+                    # save 60 samples generated from noise
                     samples = model.sample_images(60)
                     grid = make_grid(samples, nrow=6)
                     grid = tensor2img(grid)
