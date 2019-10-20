@@ -1,7 +1,7 @@
 import glf.models.archs.GLF_arch as GLF_arch
+import glf.models.archs.TinyGLF_arch as TinyGLF_arch
 
 
-# Encoder
 def define_encoder(opt):
     opt_net = opt['encoder']
     which_model = opt_net['which_model']
@@ -12,9 +12,9 @@ def define_encoder(opt):
                                 nz=opt_net['nz'])
     # elif which_model == 'vae_encoder':
     elif which_model == 'glf_tiny_encoder':
-        netE = GLF_arch.TinyEncoder(img_size=opt_net['img_size'],
-                                in_ch=opt_net['in_ch'],
-                                nz=opt_net['nz'])
+        netE = TinyGLF_arch.TinyEncoder(img_size=opt_net['img_size'],
+                                        in_ch=opt_net['in_ch'],
+                                        nz=opt_net['nz'])
     else:
         raise NotImplementedError('Encoder model [{:s}] not recognized'.format(which_model))
 
@@ -31,9 +31,9 @@ def define_decoder(opt):
                                 out_ch=opt_net['out_ch'],
                                 nz=opt_net['nz'])
     elif which_model == 'glf_tiny_decoder':
-        netD = GLF_arch.TinyDecoder(img_size=opt_net['img_size'],
-                                out_ch=opt_net['out_ch'],
-                                nz=opt_net['nz'])
+        netD = TinyGLF_arch.TinyDecoder(img_size=opt_net['img_size'],
+                                        out_ch=opt_net['out_ch'],
+                                        nz=opt_net['nz'])
     # elif which_model == 'vae_decoder':
     else:
         raise NotImplementedError('Decoder model [{:s}] not recognized'.format(which_model))
