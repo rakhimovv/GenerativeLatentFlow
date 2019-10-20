@@ -15,7 +15,6 @@ from glf.data.data_sampler import DistIterSampler
 from glf.metrics import InceptionPredictor
 from glf.models import create_model
 from glf.utils import util
-from utils.util import tensor2img
 
 
 def init_dist(backend='nccl', **kwargs):
@@ -188,7 +187,7 @@ def main():
                     # save 60 samples generated from noise
                     samples = model.sample_images(60)
                     grid = make_grid(samples, nrow=6)
-                    grid = tensor2img(grid)
+                    grid = util.tensor2img(grid)
                     util.save_img(grid, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
                     del samples, grid
 

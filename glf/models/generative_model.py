@@ -126,7 +126,7 @@ class GenerativeModel(BaseModel):
                             optimizer, train_opt['T_period'], eta_min=train_opt['eta_min'],
                             restarts=train_opt['restarts'], weights=train_opt['restart_weights']))
             else:
-                raise NotImplementedError('MultiStepLR learning rate scheme is enough.')
+                logger.info('No learning rate scheme is applied.')
 
             self.log_dict = OrderedDict()
 

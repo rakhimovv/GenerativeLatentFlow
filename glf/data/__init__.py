@@ -65,16 +65,17 @@ def create_dataset(dataset_opt, is_train):
     elif name == 'CIFAR-10':
         from torchvision.datasets import CIFAR10 as D
     elif name == 'CelebA':
-        from torchvision.datasets import CelebA as D
+        from torchvision.datasets import CelebA as C
     elif name == 'dots':
         pass
     else:
         raise NotImplementedError('Dataset [{:s}] is not recognized.'.format(name))
 
     if name == 'CelebA':
-        # TODO add center crop to 160 × 160 and then resize to 64×64
-        dataset = D(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type=None,
-                    transform=transforms.ToTensor(), target_transform=None, download=True)
+        dataset = C(root=dataset_opt['dataroot'], split='train' if is_train else 'valid', target_type='identity',
+                    transform=transforms.Compose(
+                        [transforms.CenterCrop(160), transforms.Resize(64), transforms.ToTensor()]),
+                    target_transform=None, download=True)
     elif name == 'dots':
         dataset = _create_dots(root=dataset_opt['dataroot'], is_train=is_train)
     else:
