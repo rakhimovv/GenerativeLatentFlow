@@ -1,11 +1,10 @@
-from scipy import linalg
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from scipy import linalg
 
 from glf.metrics.inception import InceptionV3
-
 
 # Maps feature dimensionality to their output blocks indices
 DIM_TO_BLOCK_ID = {
@@ -23,6 +22,9 @@ class InceptionPredictor(nn.Module):
         self.output_dim = output_dim
         self.block_id = DIM_TO_BLOCK_ID[self.output_dim]
         self.model = InceptionV3([self.block_id])
+        self.model.eval()
+        for k, v in self.model.named_parameters():
+            v.requires_grad = False
 
     def forward(self, imgs: torch.Tensor) -> torch.Tensor:
         out = self.model(imgs)[0]
