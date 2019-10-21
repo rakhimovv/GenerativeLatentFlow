@@ -1,0 +1,87 @@
+#### general settings
+name: glf_original_dots # name of the experiment
+use_tb_logger: true # use tensorboard or not
+model: generative
+gpu_ids: [3] # e.g. [0,1,2,5]
+
+#### datasets
+datasets:
+  train:
+    name: dots
+    dataroot: datasets/dots
+    use_shuffle: true
+    n_workers: 8  # per GPU
+    batch_size: 256
+  val:
+    name: dots
+    dataroot: datasets/dots
+    n_workers: 8  # per GPU
+    batch_size: 32
+
+#### network structures
+encoder: # E
+  which_model: glf_encoder
+  img_size: 32
+  in_ch: 3
+  nz: 64
+
+decoder: # D
+  which_model: glf_decoder
+  img_size: 32
+  out_ch: 3
+  nz: 64
+
+flow: # F
+  which_model: FlowNet
+  nz: 64
+  hidden_size: 256
+  nblocks: 4
+
+#### path
+path:
+  pretrained_encoder: ~
+  pretrained_decoder: ~
+  pretrained_flow: ~
+  resume_state: ~
+  strict_load: true
+
+#### training settings: learning rate scheme, loss
+train:
+  lr_E: !!float 1e-3 # 0 to freeze params
+  weight_decay_E: 0
+  beta1_E: 0.9
+  beta2_E: 0.99
+
+  lr_D: !!float 1e-3 # 0 to freeze params
+  weight_decay_D: 0
+  beta1_D: 0.9
+  beta2_D: 0.99
+
+  lr_F: !!float 1e-3  # 0 to freeze params
+  weight_decay_F: !!float 2e-5
+  beta1_F: 0.9
+  beta2_F: 0.99
+
+  niter: 39000 # =200 epochs
+
+  lr_scheme: MultiStepLR
+  warmup_iter: -1  # no warm up
+  lr_steps: [9750, 19500, 29250] # after 50 epochs
+  lr_gamma: 0.5
+
+  pixel_criterion: l1
+  pixel_weight: !!float 1
+
+  feature_weight: 1
+
+  nll_weight: 1
+
+  manual_seed: 10
+  val_freq: !!float 1000
+  val_calculate_fid_prd: true
+  val_num_batches: 50
+
+#### logger
+logger:
+  print_freq: 100
+  save_checkpoint_freq: ~ #!!float 1e4
