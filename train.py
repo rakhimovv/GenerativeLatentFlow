@@ -35,6 +35,7 @@ def main():
     parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
                         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('-fid_num', '--fid_num_examples', type=int, default=None)
     args = parser.parse_args()
     opt = option.parse(args.opt, is_train=True)
 
@@ -189,7 +190,8 @@ def main():
                         art_samples = []
                         true_samples = []
                         logger.info('Calculating FID:')
-                        pbar = util.ProgressBar(len(val_loader))
+                        num_examples = args.fid_num_examples or len(val_loader)
+                        pbar = util.ProgressBar(num_examples)
                         for k, (val_data, _) in enumerate(val_loader):
                             samples = model.sample_images(val_data.size(0)).to(predictor_device)
                             val_data = val_data.to(predictor_device)
@@ -199,9 +201,15 @@ def main():
                             true_samples.append(predictor(val_data).detach().cpu().numpy())
 
                             pbar.update('batch #{}'.format(k))
+                            if args.fid_num_examples is not None and k > args.fid_num_examples:
+                                break
 
-                        art_samples = np.array(art_samples).reshape(-1, predictor_dim)
-                        true_samples = np.array(true_samples).reshape(-1, predictor_dim)
+                        art_samples = np.concatenate(art_samples, axis=0)
+                        true_samples = np.concatenate(true_samples, axis=0)
+                        # print(art_samples.shape, true_samples.shape)
+
+                        art_samples = art_samples.reshape(-1, predictor_dim)
+                        true_samples = true_samples.reshape(-1, predictor_dim)
                         FID = frechet_distance(true_samples, art_samples)
 
                         # log
