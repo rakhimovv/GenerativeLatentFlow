@@ -1,6 +1,7 @@
 """create dataset and dataloader"""
 import logging
 import os
+from tqdm import tqdm
 
 import numpy as np
 import torch
@@ -11,13 +12,17 @@ from torchvision import transforms
 from glf.data.dots import gen_image_count
 
 
-def _create_dots(root, is_train, num_objects=3, num_samples=1000):
+def _create_dots(root, is_train, num_objects=3, num_samples=10000):
     filename = 'train' if is_train else 'test'
     path_fo_file = os.path.join(root, filename)
 
+    if not os.path.exists(root):
+        os.makedirs(root)
+
     if not os.path.exists(path_fo_file):
         images = []
-        for i in range(num_samples):
+        print('Generating dots...')
+        for _ in tqdm(range(num_samples)):
             new_img = gen_image_count(num_object=num_objects).astype(np.float32) / 255.0
             images.append(new_img)
 
