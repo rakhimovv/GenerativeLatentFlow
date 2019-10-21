@@ -13,6 +13,7 @@ from glf.data.dots import gen_image_count
 
 
 def _create_dots(root, is_train, num_objects=3, num_samples=10000):
+    num_samples = num_samples if is_train else num_samples / 10
     filename = 'train' if is_train else 'test'
     path_fo_file = os.path.join(root, filename)
 
