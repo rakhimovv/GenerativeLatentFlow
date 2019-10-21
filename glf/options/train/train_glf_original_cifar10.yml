@@ -15,6 +15,8 @@ datasets:
   val:
     name: CIFAR-10
     dataroot: datasets/cifar10
+    n_workers: 8  # per GPU
+    batch_size: 32
 
 #### network structures
 encoder: # E
@@ -76,6 +78,7 @@ train:
 
   manual_seed: 10
   val_freq: !!float 1000
+  val_calculate_fid: true
 
 #### logger
 logger:

@@ -4,11 +4,11 @@ import math
 import os
 import random
 
+import numpy as np
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torchvision.utils import make_grid
-import numpy as np
 
 import glf.options.options as option
 from glf.data import create_dataloader, create_dataset
@@ -35,7 +35,6 @@ def main():
     parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
                         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument('-fid', '--calculate_fid', action='store_true', default=False)
     args = parser.parse_args()
     opt = option.parse(args.opt, is_train=True)
 
@@ -51,7 +50,6 @@ def main():
         rank = torch.distributed.get_rank()
 
     #### loading resume state if exists
-    # TODO check resume state
     if opt['path'].get('resume_state', None):
         # distributed resuming: all load into default GPU
         device_id = torch.cuda.current_device()
@@ -76,13 +74,6 @@ def main():
         logger.info(option.dict2str(opt))
         # tensorboard logger
         if opt['use_tb_logger'] and 'debug' not in opt['name']:
-            # version = float(torch.__version__[0:3])
-            # if version >= 1.1:  # PyTorch 1.1
-            #     from torch.utils.tensorboard import SummaryWriter
-            # else:
-            #     logger.info(
-            #         'You are using PyTorch {}. Tensorboard will use [tensorboardX]'.format(version))
-            #     from tensorboardX import SummaryWriter
             from tensorboardX import SummaryWriter
             tb_logger = SummaryWriter(log_dir='tb_logger/' + opt['name'])
     else:
@@ -124,14 +115,13 @@ def main():
                     total_epochs, total_iters))
         elif phase == 'val':
             val_set = create_dataset(dataset_opt, is_train=False)
-            val_loader = create_dataloader(val_set, dataset_opt, opt, None, eval_batch_size=32)
+            val_loader = create_dataloader(val_set, dataset_opt, opt)
             if rank <= 0:
                 logger.info('Number of val images in [{:s}]: {:d}'.format(
                     dataset_opt['name'], len(val_set)))
         else:
             raise NotImplementedError('Phase [{:s}] is not recognized.'.format(phase))
     assert train_loader is not None
-    assert val_loader is not None
 
     #### create model
     model = create_model(opt)
@@ -154,24 +144,6 @@ def main():
     #### training
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
     for epoch in range(start_epoch, total_epochs + 1):
-
-        if args.calculate_fid and opt['datasets']['val']['name'] in ['CIFAR-10', 'CelebA']:
-            art_samples = []
-            true_samples = []
-            print('calculating FID')
-            for k, (val_data, _) in enumerate(val_loader):
-                samples = model.sample_images(val_data.size(0)).to(predictor_device)
-                val_data = val_data.to(predictor_device)
-
-                # print(samples.shape, val_data.shape)
-                art_samples.append(predictor(samples).detach().cpu().numpy())
-                true_samples.append(predictor(val_data).detach().cpu().numpy())
-
-            art_samples = np.array(art_samples).reshape(-1, predictor_dim)
-            true_samples = np.array(true_samples).reshape(-1, predictor_dim)
-            FID = frechet_distance(true_samples, art_samples)
-            tb_logger.add_scalar('VAL_FID', FID, current_step)
-            print(f'Epoch = {epoch}, FID = {FID}')
 
         if opt['dist']:
             train_sampler.set_epoch(epoch)
@@ -205,8 +177,6 @@ def main():
             if opt['datasets'].get('val', None) and (
                     current_step % opt['train']['val_freq'] == 0 or current_step == total_iters - 1):
                 if rank <= 0:
-                    # does not support multi-GPU validation
-
                     # save 60 samples generated from noise
                     samples = model.sample_images(60)
                     grid = make_grid(samples, nrow=6)
@@ -214,27 +184,34 @@ def main():
                     util.save_img(grid, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
                     del samples, grid
 
-                    # TODO ограничить размер валидации? тест из стандартного датасета из torchvision может по памяти не влезть
-                    # inc_true = []  # TODO тупо каждую сколько-то итераций считать одно и то же
-                    # inc_art = []
-                    # for i, val_data in enumerate(val_loader):  # 1 image in batch
-                    #     inc_true.append(predictor(val_data['image'].to(predictor_device)).cpu().numpy())
-                    #     inc_art.append(predictor(model.sample_images(25).to(predictor_device)).cpu().numpy())
-                    # inc_true = np.concatenate(inc_true)
-                    # inc_art = np.concatenate(inc_art)
-                    # fid = frechet_distance(inc_true, inc_art)
-                    #
-                    # # TODO compute FID
-                    # prd = 0
-                    #
-                    # # log
-                    # logger.info('# Validation # FID: {:.4e}'.format(fid))
-                    # logger.info('# Validation # PRD: {:.4e}'.format(prd))
-                    #
-                    # # tensorboard logger
-                    # if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                    #     tb_logger.add_scalar('fid', fid, current_step)
-                    #     tb_logger.add_scalar('prd', prd, current_step)
+                    # calculate FID
+                    if opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in ['CIFAR-10', 'CelebA']:
+                        art_samples = []
+                        true_samples = []
+                        logger.info('Calculating FID:')
+                        pbar = util.ProgressBar(len(val_loader))
+                        for k, (val_data, _) in enumerate(val_loader):
+                            samples = model.sample_images(val_data.size(0)).to(predictor_device)
+                            val_data = val_data.to(predictor_device)
+
+                            # print(samples.shape, val_data.shape)
+                            art_samples.append(predictor(samples).detach().cpu().numpy())
+                            true_samples.append(predictor(val_data).detach().cpu().numpy())
+
+                            pbar.update('batch #{}'.format(k))
+
+                        art_samples = np.array(art_samples).reshape(-1, predictor_dim)
+                        true_samples = np.array(true_samples).reshape(-1, predictor_dim)
+                        FID = frechet_distance(true_samples, art_samples)
+
+                        # log
+                        logger.info('# Validation # FID: {:.4e}'.format(FID))
+
+                        # tensorboard logger
+                        if opt['use_tb_logger'] and 'debug' not in opt['name']:
+                            tb_logger.add_scalar('fid', FID, current_step)
+
+                        del art_samples, true_samples, FID
 
             #### save models and training states
             if opt['logger']['save_checkpoint_freq'] and current_step % opt['logger']['save_checkpoint_freq'] == 0:

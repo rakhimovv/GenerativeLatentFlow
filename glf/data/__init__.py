@@ -30,27 +30,26 @@ def _create_dots(root, is_train, num_objects=3, num_samples=1000):
     return dataset
 
 
-def create_dataloader(dataset, dataset_opt, opt=None, sampler=None, eval_batch_size=None):
+def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
     phase = dataset_opt['phase']
-    if phase == 'train':
-        if opt['dist']:
-            world_size = torch.distributed.get_world_size()
-            num_workers = dataset_opt['n_workers']
-            assert dataset_opt['batch_size'] % world_size == 0
-            batch_size = dataset_opt['batch_size'] // world_size
-            shuffle = False
-        else:
-            num_workers = 1 if opt['gpu_ids'] is None else dataset_opt['n_workers'] * len(opt['gpu_ids'])
-            batch_size = dataset_opt['batch_size']
-            shuffle = True
-
-        batch_size = eval_batch_size or batch_size
-        return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
-                                           num_workers=num_workers, sampler=sampler, drop_last=True,
-                                           pin_memory=False)
+    if opt['dist']:
+        world_size = torch.distributed.get_world_size()
+        num_workers = dataset_opt['n_workers']
+        assert dataset_opt['batch_size'] % world_size == 0
+        batch_size = dataset_opt['batch_size'] // world_size
+        shuffle = False
     else:
-        return torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1,
-                                           pin_memory=False)
+        if opt['gpu_ids'] is None or dataset_opt['n_workers'] is None:
+            num_workers = 1
+        else:
+            num_workers = dataset_opt['n_workers'] * len(opt['gpu_ids'])
+        batch_size = dataset_opt['batch_size'] if dataset_opt['batch_size'] else 1
+        shuffle = True if phase == 'train' else False
+    drop_last = (phase == 'train')
+
+    return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                                       num_workers=num_workers, sampler=sampler, drop_last=drop_last,
+                                       pin_memory=False)
 
 
 def create_dataset(dataset_opt, is_train):
