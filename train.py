@@ -35,7 +35,6 @@ def main():
     parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
                         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument('-fid_num', '--fid_num_examples', type=int, default=None)
     args = parser.parse_args()
     opt = option.parse(args.opt, is_train=True)
 
@@ -126,9 +125,13 @@ def main():
 
     #### create model
     model = create_model(opt)
-    predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
-    predictor_dim = 192
-    predictor = InceptionPredictor(output_dim=predictor_dim).to(predictor_device)
+    if opt['datasets'].get('val', None) and opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in [
+        'CIFAR-10', 'CelebA']:
+        predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
+        predictor_dim = 2048
+        predictor = InceptionPredictor(output_dim=predictor_dim).to(predictor_device)
+    else:
+        predictor = None
 
     #### resume training
     if resume_state:
@@ -174,44 +177,46 @@ def main():
                             tb_logger.add_scalar(k, v, current_step)
                 if rank <= 0:
                     logger.info(message)
+
             #### validation
             if opt['datasets'].get('val', None) and (
-                    current_step % opt['train']['val_freq'] == 0 or current_step == total_iters - 1):
+                    current_step % opt['train']['val_freq'] == 0 or current_step == total_iters):
                 if rank <= 0:
                     # save 60 samples generated from noise
                     samples = model.sample_images(60)
                     grid = make_grid(samples, nrow=6)
                     grid = util.tensor2img(grid)
-                    util.save_img(grid, os.path.join(opt['path']['samples'], '{:d}.png'.format(current_step)))
+                    sample_name = 'latest.png' if current_step == total_iters else '{:d}.png'.format(current_step)
+                    util.save_img(grid, os.path.join(opt['path']['samples'], sample_name))
                     del samples, grid
 
                     # calculate FID
-                    if opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in ['CIFAR-10', 'CelebA']:
+                    if predictor is not None:
                         art_samples = []
                         true_samples = []
                         logger.info('Calculating FID and PRD:')
 
-                        if epoch == total_epochs:
-                            num_examples = len(val_loader)
+                        if opt['train']['val_fid_num_batches'] is None or current_step == total_iters:
+                            num_val_batches = len(val_loader)
                         else:
-                            num_examples = args.fid_num_examples or len(val_loader)
-                        pbar = util.ProgressBar(num_examples)
+                            num_val_batches = int(opt['train']['val_fid_num_batches'])
+                        pbar = util.ProgressBar(num_val_batches)
                         for k, (val_data, _) in enumerate(val_loader):
+                            if k >= num_val_batches:
+                                break
+
                             samples = model.sample_images(val_data.size(0)).to(predictor_device)
                             val_data = val_data.to(predictor_device)
 
-                            # print(samples.shape, val_data.shape)
                             art_samples.append(predictor(samples).detach().cpu().numpy())
                             true_samples.append(predictor(val_data).detach().cpu().numpy())
 
                             pbar.update('batch #{}'.format(k))
-                            if (args.fid_num_examples is not None and k > args.fid_num_examples) and \
-                                epoch != total_epochs:
-                                break
+
+                            del samples, val_data
 
                         art_samples = np.concatenate(art_samples, axis=0)
                         true_samples = np.concatenate(true_samples, axis=0)
-                        # print(art_samples.shape, true_samples.shape)
 
                         art_samples = art_samples.reshape(-1, predictor_dim)
                         true_samples = true_samples.reshape(-1, predictor_dim)
@@ -220,7 +225,10 @@ def main():
                         f_8, f_1_8 = prd_to_max_f_beta_pair(precision, recall, beta=8)
 
                         # log
-                        logger.info('# Validation # FID: {:.4e}'.format(FID))
+                        if current_step == total_iters:
+                            logger.info('# Final Validation # FID: {:.4e}'.format(FID))
+                        else:
+                            logger.info('# Validation # FID: {:.4e}'.format(FID))
                         logger.info('# Validation # F8: {:.4e} F1/8: {:.4e}'.format(f_8, f_1_8))
 
                         # tensorboard logger
