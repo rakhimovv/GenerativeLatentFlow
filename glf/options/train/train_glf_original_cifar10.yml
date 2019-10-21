@@ -21,18 +21,18 @@ encoder: # E
   which_model: glf_encoder
   img_size: 32
   in_ch: 3
-  nz: 20
+  nz: 64
 
 decoder: # D
   which_model: glf_decoder
   img_size: 32
   out_ch: 3
-  nz: 20
+  nz: 64
 
 flow: # F
   which_model: FlowNet
-  nz: 20
-  hidden_size: 64
+  nz: 64
+  hidden_size: 256
   nblocks: 4
 
 #### path
