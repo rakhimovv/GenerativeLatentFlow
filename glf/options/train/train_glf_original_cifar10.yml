@@ -79,6 +79,7 @@ train:
   manual_seed: 10
   val_freq: !!float 1000
   val_calculate_fid: true
+  val_fid_num_batches: 100
 
 #### logger
 logger:
