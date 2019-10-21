@@ -125,7 +125,8 @@ def main():
 
     #### create model
     model = create_model(opt)
-    if opt['datasets'].get('val', None) and opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in [
+    if opt['datasets'].get('val', None) and opt['train']['val_calculate_fid_prd'] and opt['datasets']['val'][
+        'name'] in [
         'CIFAR-10', 'CelebA']:
         predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
         predictor_dim = 2048
@@ -196,10 +197,10 @@ def main():
                         true_samples = []
                         logger.info('Calculating FID and PRD:')
 
-                        if opt['train']['val_fid_num_batches'] is None or current_step == total_iters:
+                        if opt['train']['val_num_batches'] is None or current_step == total_iters:
                             num_val_batches = len(val_loader)
                         else:
-                            num_val_batches = int(opt['train']['val_fid_num_batches'])
+                            num_val_batches = int(opt['train']['val_num_batches'])
                         pbar = util.ProgressBar(num_val_batches)
                         for k, (val_data, _) in enumerate(val_loader):
                             if k >= num_val_batches:
@@ -227,9 +228,10 @@ def main():
                         # log
                         if current_step == total_iters:
                             logger.info('# Final Validation # FID: {:.4e}'.format(FID))
+                            logger.info('# Final Validation # F8: {:.4e} F1/8: {:.4e}'.format(f_8, f_1_8))
                         else:
                             logger.info('# Validation # FID: {:.4e}'.format(FID))
-                        logger.info('# Validation # F8: {:.4e} F1/8: {:.4e}'.format(f_8, f_1_8))
+                            logger.info('# Validation # F8: {:.4e} F1/8: {:.4e}'.format(f_8, f_1_8))
 
                         # tensorboard logger
                         if opt['use_tb_logger'] and 'debug' not in opt['name']:
