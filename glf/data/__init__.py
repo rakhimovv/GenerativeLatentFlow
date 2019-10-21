@@ -15,6 +15,9 @@ def _create_dots(root, is_train, num_objects=3, num_samples=10000):
     filename = 'train' if is_train else 'test'
     path_fo_file = os.path.join(root, filename)
 
+    if not os.path.exists(root):
+        os.makedirs(root)
+
     if not os.path.exists(path_fo_file):
         images = []
         for i in range(num_samples):
