@@ -30,6 +30,7 @@ def _create_dots(root, is_train, num_objects=3, num_samples=10000):
         images = np.stack(images, axis=0).transpose((0, 3, 1, 2))
         np.save(path_fo_file, images)
     else:
+        print('Loading dots...')
         images = np.load(path_fo_file)
 
     dataset = TensorDataset(torch.from_numpy(images), torch.from_numpy(np.array([num_objects] * num_samples)))
