@@ -73,7 +73,7 @@ train:
 
   nll_weight: 1
 
-  manual_seed: 10
+  manual_seed: 20
   val_freq: !!float 1000
   val_calculate_fid_prd: true
   val_num_batches: 50
