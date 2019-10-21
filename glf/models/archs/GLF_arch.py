@@ -159,7 +159,7 @@ class FlowNet(nn.Module):
         out = self.affine_layers[-1].reverse(x)
         for i in range(self.nblocks - 1):
             out = self.perms[-1 - i].reverse(out)
-            out = self.affine_layers[-1 - i].reverse(out)
+            out = self.affine_layers[-2 - i].reverse(out)
         return out
 
 
