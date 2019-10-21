@@ -1,5 +1,5 @@
 #### general settings
-name: glf_original_celeba # name of the experiment
+name: glf_original_celeba_wo_vgg_loss # name of the experiment
 use_tb_logger: true # use tensorboard or not
 model: generative
 gpu_ids: [1,2] # e.g. [0,1,2,5]
@@ -69,7 +69,7 @@ train:
   pixel_criterion: l1
   pixel_weight: !!float 1
 
-  feature_weight: 1
+  feature_weight: 0
 
   nll_weight: 1
 
