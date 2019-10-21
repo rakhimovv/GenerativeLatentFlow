@@ -190,7 +190,11 @@ def main():
                         art_samples = []
                         true_samples = []
                         logger.info('Calculating FID:')
-                        num_examples = args.fid_num_examples or len(val_loader)
+
+                        if epoch == total_epochs:
+                            num_examples = len(val_loader)
+                        else:
+                            num_examples = args.fid_num_examples or len(val_loader)
                         pbar = util.ProgressBar(num_examples)
                         for k, (val_data, _) in enumerate(val_loader):
                             samples = model.sample_images(val_data.size(0)).to(predictor_device)
@@ -201,7 +205,8 @@ def main():
                             true_samples.append(predictor(val_data).detach().cpu().numpy())
 
                             pbar.update('batch #{}'.format(k))
-                            if args.fid_num_examples is not None and k > args.fid_num_examples:
+                            if (args.fid_num_examples is not None and k > args.fid_num_examples) and \
+                                epoch != total_epochs:
                                 break
 
                         art_samples = np.concatenate(art_samples, axis=0)
