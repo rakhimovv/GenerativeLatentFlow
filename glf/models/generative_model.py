@@ -27,7 +27,7 @@ class GenerativeModel(BaseModel):
         # DEFINE NETWORKS
         self.netE = networks.define_encoder(opt).to(self.device)
         self.netD = networks.define_decoder(opt).to(self.device)
-        self.netF, self.nz = networks.define_flow(opt)
+        self.netF, self.nz, self.stop_gradients = networks.define_flow(opt)
         self.netF.to(self.device)
         if opt['dist']:
             self.netE = DistributedDataParallel(self.netE, device_ids=[torch.cuda.current_device()])
@@ -168,7 +168,11 @@ class GenerativeModel(BaseModel):
             l_total += l_fea
 
         # negative likelihood loss
-        noise_out, logdets = self.netF(z.detach())
+        if self.stop_gradients:
+            noise_out, logdets = self.netF(z.detach())
+        else:
+            noise_out, logdets = self.netF(z)
+
         l_nll = self.l_nll_w * self.cri_nll(noise_out, logdets)
         l_total += l_nll
 
