@@ -33,6 +33,7 @@ decoder: # D
 
 flow: # F
   which_model: FlowNet
+  stop_gradients: True
   nz: 64
   hidden_size: 256
   nblocks: 4
