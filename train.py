@@ -128,7 +128,7 @@ def main():
     if opt['datasets'].get('val', None) and opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in [
         'CIFAR-10', 'CelebA']:
         predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
-        predictor_dim = 192
+        predictor_dim = 2048
         predictor = InceptionPredictor(output_dim=predictor_dim).to(predictor_device)
     else:
         predictor = None
