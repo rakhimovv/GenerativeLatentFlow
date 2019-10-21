@@ -30,7 +30,7 @@ def _create_dots(root, is_train, num_objects=3, num_samples=1000):
     return dataset
 
 
-def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
+def create_dataloader(dataset, dataset_opt, opt=None, sampler=None, eval_batch_size=None):
     phase = dataset_opt['phase']
     if phase == 'train':
         if opt['dist']:
@@ -43,6 +43,8 @@ def create_dataloader(dataset, dataset_opt, opt=None, sampler=None):
             num_workers = 1 if opt['gpu_ids'] is None else dataset_opt['n_workers'] * len(opt['gpu_ids'])
             batch_size = dataset_opt['batch_size']
             shuffle = True
+
+        batch_size = eval_batch_size or batch_size
         return torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
                                            num_workers=num_workers, sampler=sampler, drop_last=True,
                                            pin_memory=False)

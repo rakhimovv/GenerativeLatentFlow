@@ -8,11 +8,12 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 from torchvision.utils import make_grid
+import numpy as np
 
 import glf.options.options as option
 from glf.data import create_dataloader, create_dataset
 from glf.data.data_sampler import DistIterSampler
-from glf.metrics import InceptionPredictor
+from glf.metrics import InceptionPredictor, frechet_distance
 from glf.models import create_model
 from glf.utils import util
 
@@ -34,6 +35,7 @@ def main():
     parser.add_argument('--launcher', choices=['none', 'pytorch'], default='none',
                         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument('-fid', '--calculate_fid', action='store_true', default=False)
     args = parser.parse_args()
     opt = option.parse(args.opt, is_train=True)
 
@@ -122,18 +124,20 @@ def main():
                     total_epochs, total_iters))
         elif phase == 'val':
             val_set = create_dataset(dataset_opt, is_train=False)
-            val_loader = create_dataloader(val_set, dataset_opt, opt, None)
+            val_loader = create_dataloader(val_set, dataset_opt, opt, None, eval_batch_size=32)
             if rank <= 0:
                 logger.info('Number of val images in [{:s}]: {:d}'.format(
                     dataset_opt['name'], len(val_set)))
         else:
             raise NotImplementedError('Phase [{:s}] is not recognized.'.format(phase))
     assert train_loader is not None
+    assert val_loader is not None
 
     #### create model
     model = create_model(opt)
     predictor_device = torch.device('cuda' if opt['gpu_ids'] is not None else 'cpu')
-    predictor = InceptionPredictor(output_dim=64).to(predictor_device)
+    predictor_dim = 192
+    predictor = InceptionPredictor(output_dim=predictor_dim).to(predictor_device)
 
     #### resume training
     if resume_state:
@@ -150,6 +154,25 @@ def main():
     #### training
     logger.info('Start training from epoch: {:d}, iter: {:d}'.format(start_epoch, current_step))
     for epoch in range(start_epoch, total_epochs + 1):
+
+        if args.calculate_fid and opt['datasets']['val']['name'] in ['CIFAR-10', 'CelebA']:
+            art_samples = []
+            true_samples = []
+            print('calculating FID')
+            for k, (val_data, _) in enumerate(val_loader):
+                samples = model.sample_images(val_data.size(0)).to(predictor_device)
+                val_data = val_data.to(predictor_device)
+
+                # print(samples.shape, val_data.shape)
+                art_samples.append(predictor(samples).detach().cpu().numpy())
+                true_samples.append(predictor(val_data).detach().cpu().numpy())
+
+            art_samples = np.array(art_samples).reshape(-1, predictor_dim)
+            true_samples = np.array(true_samples).reshape(-1, predictor_dim)
+            FID = frechet_distance(true_samples, art_samples)
+            tb_logger.add_scalar('VAL_FID', FID, current_step)
+            print(f'Epoch = {epoch}, FID = {FID}')
+
         if opt['dist']:
             train_sampler.set_epoch(epoch)
         for _, train_data in enumerate(train_loader):
