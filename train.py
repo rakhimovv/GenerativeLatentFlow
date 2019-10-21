@@ -235,9 +235,9 @@ def main():
 
                         # tensorboard logger
                         if opt['use_tb_logger'] and 'debug' not in opt['name']:
-                            tb_logger.add_scalar('fid', FID, current_step)
-                            tb_logger.add_scalar('F8', f_8, current_step)
-                            tb_logger.add_scalar('F1/8', f_8, f_1_8)
+                            tb_logger.add_scalar('metrics/fid', FID, current_step)
+                            tb_logger.add_scalar('metrics/F8', f_8, current_step)
+                            tb_logger.add_scalar('metrics/F1_8', f_8, f_1_8)
 
                         del art_samples, true_samples, FID
 

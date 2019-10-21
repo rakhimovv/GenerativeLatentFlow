@@ -62,11 +62,6 @@ def frechet_distance(latent_true: np.ndarray, latent_artificial: np.ndarray) -> 
     return float(fid)
 
 
-def prd():
-    # Precision and Recall for Distributions
-    pass
-
-
 if __name__ == '__main__':
 
     latent_true = np.random.rand(1024, 32)
