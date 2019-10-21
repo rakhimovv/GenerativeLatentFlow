@@ -13,7 +13,7 @@ from torchvision.utils import make_grid
 import glf.options.options as option
 from glf.data import create_dataloader, create_dataset
 from glf.data.data_sampler import DistIterSampler
-from glf.metrics import InceptionPredictor, frechet_distance
+from glf.metrics import InceptionPredictor, frechet_distance, compute_prd_from_embedding, prd_to_max_f_beta_pair
 from glf.models import create_model
 from glf.utils import util
 
@@ -189,7 +189,7 @@ def main():
                     if opt['train']['val_calculate_fid'] and opt['datasets']['val']['name'] in ['CIFAR-10', 'CelebA']:
                         art_samples = []
                         true_samples = []
-                        logger.info('Calculating FID:')
+                        logger.info('Calculating FID and PRD:')
 
                         if epoch == total_epochs:
                             num_examples = len(val_loader)
@@ -216,13 +216,18 @@ def main():
                         art_samples = art_samples.reshape(-1, predictor_dim)
                         true_samples = true_samples.reshape(-1, predictor_dim)
                         FID = frechet_distance(true_samples, art_samples)
+                        precision, recall = compute_prd_from_embedding(true_samples, art_samples)
+                        f_8, f_1_8 = prd_to_max_f_beta_pair(precision, recall, beta=8)
 
                         # log
                         logger.info('# Validation # FID: {:.4e}'.format(FID))
+                        logger.info('# Validation # F8: {:.4e} F1/8: {:.4e}'.format(f_8, f_1_8))
 
                         # tensorboard logger
                         if opt['use_tb_logger'] and 'debug' not in opt['name']:
                             tb_logger.add_scalar('fid', FID, current_step)
+                            tb_logger.add_scalar('F8', f_8, current_step)
+                            tb_logger.add_scalar('F1/8', f_8, f_1_8)
 
                         del art_samples, true_samples, FID
 
