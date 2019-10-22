@@ -68,6 +68,7 @@ train:
 
   pixel_criterion: l1
   pixel_weight: !!float 1
+  add_background_mask: false
 
   feature_weight: 1
 

@@ -57,6 +57,12 @@ class GenerativeModel(BaseModel):
                 else:
                     raise NotImplementedError('Loss type [{:s}] not recognized.'.format(l_pix_type))
                 self.l_pix_w = train_opt['pixel_weight']
+
+                if train_opt['add_background_mask']:
+                    self.add_mask = True
+                else:
+                    self.add_mask = False
+
             else:
                 logger.info('Remove pixel loss.')
                 self.cri_pix = None
@@ -160,7 +166,13 @@ class GenerativeModel(BaseModel):
         l_total = 0
 
         if self.cri_pix:  # pixel loss
-            l_pix = self.l_pix_w * self.cri_pix(reconstructed, self.image_gt)
+            if self.add_mask:
+                mask = (self.image_gt[:, 0, :, :] == 1).unsqueeze(1).float()
+                inv_mask = 1 - mask
+                l_pix = (1 * self.cri_pix(reconstructed * mask, self.image_gt * mask) +
+                         10 * self.cri_pix(reconstructed * inv_mask, self.image_gt * inv_mask))
+            else:
+                l_pix = self.l_pix_w * self.cri_pix(reconstructed, self.image_gt)
             l_total += l_pix
 
         if self.cri_fea:  # feature loss

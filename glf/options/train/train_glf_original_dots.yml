@@ -1,5 +1,5 @@
 #### general settings
-name: glf_original_dots # name of the experiment
+name: glf_original_dots_masked2 # name of the experiment
 use_tb_logger: true # use tensorboard or not
 model: generative
 gpu_ids: [3] # e.g. [0,1,2,5]
@@ -10,7 +10,7 @@ datasets:
     name: dots
     dataroot: datasets/dots
     use_shuffle: true
-    n_workers: 1  # per GPU
+    n_workers: 1 # per GPU
     batch_size: 256
   val:
     name: dots
@@ -62,18 +62,18 @@ train:
   beta1_F: 0.9
   beta2_F: 0.99
 
-  niter: 39000 # =200 epochs
+  niter: 20000 # =200 epochs
 
   lr_scheme: MultiStepLR
   warmup_iter: -1  # no warm up
   lr_steps: [9750, 19500, 29250] # after 50 epochs
   lr_gamma: 0.5
 
-  pixel_criterion: l1
-  pixel_weight: !!float 1
+  pixel_criterion: l2
+  pixel_weight: 1
+  add_background_mask: true
 
-  feature_weight: 1
-
+  feature_weight: 0
   nll_weight: 1
 
   manual_seed: 43

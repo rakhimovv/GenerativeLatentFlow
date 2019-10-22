@@ -72,6 +72,7 @@ train:
 
   pixel_criterion: l1
   pixel_weight: 50 # beta / 2
+  add_background_mask: false
 
   feature_weight: 50 # beta / 2
 

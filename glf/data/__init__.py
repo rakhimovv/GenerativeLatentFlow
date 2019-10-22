@@ -12,7 +12,7 @@ from torchvision import transforms
 from glf.data.dots import gen_image_count
 
 
-def _create_dots(root, is_train, num_objects=3, num_samples=10000):
+def _create_dots(root, is_train, num_objects=3, num_samples=50000):
     num_samples = num_samples if is_train else int(num_samples / 10)
     filename = 'train.npy' if is_train else 'test.npy'
     path_fo_file = os.path.join(root, filename)
