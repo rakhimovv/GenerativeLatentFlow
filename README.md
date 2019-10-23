@@ -150,6 +150,12 @@ MNIST, FashionMNIST, CIFAR10, [Dots](https://arxiv.org/abs/1811.03259).
 If you would like to add new dataset, please look at `glf/data/__init__.py` for an example.
 
 
+### Noise interpolation
+
+To play with noise interpolation and image generation check the `notebooks/celeba_demo.ipynb`.
+
+<p align="center"><img src="imgs/noise_example.png" width="480"\></p>
+
 
 ## Results
 
