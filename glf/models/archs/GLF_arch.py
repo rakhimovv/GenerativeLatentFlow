@@ -120,7 +120,7 @@ class Permutation(nn.Module):
     def __init__(self, in_ch):
         super().__init__()
         self.in_ch = in_ch
-        self.perm = nn.Parameter(torch.randperm(in_ch))
+        self.perm = nn.Parameter(torch.randperm(in_ch), requires_grad=False)
 
     def forward(self, x):
         assert x.shape[1] == self.in_ch
