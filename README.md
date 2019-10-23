@@ -18,9 +18,25 @@ pip install -r requirements.txt
 The **Generative Latent Flow** (GLF) is an algorithm for generative modeling of the data distribution. 
 One could use it to generate images. 
 
+### Training
+
+To start the training process run
+
+```bash
+python train.py -opt glf/options/train/train_glf_original_mnist.yml
+```
+
+To start a `TensorBoard` simply run
+
+```bash
+tensorboard --logdir tb_logger/experiment_name
+```
+
 ### Parameters
 
-To start the training process, you need to modify `config` file first. 
+
+If you would to modify models' hyperparameters, number of epochs, batch size, and other, 
+consider looking to `glf/options/train` folder for configuration examples.
 An example of the config file is as follows:
 
 ```yaml
@@ -108,14 +124,6 @@ logger:
 There are some prepared configs in `glf/options/train` folder.
 
 
-### Training
-
-To start the training process run
-
-```bash
-python train.py -opt glf/options/train/train_glf_original_mnist.yml
-```
-
 This command will create multiple folders
 
 ```
@@ -134,10 +142,18 @@ experiments/experiment_name
 └──  config.ymllogger_file.log              # Logs
 ```
 
-To start a `TensorBoard` simply run
+### Datasets
 
-```bash
-tensorboard --logdir tb_logger/experiment_name
-```
+The following datasets are available: [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html),
+MNIST, FashionMNIST, CIFAR10, [Dots](https://arxiv.org/abs/1811.03259). 
+If you would like to add new dataset, please look at `glf/data/__init__.py` for an example.
+
+
 
 ## Results
+
+### CelebA
+
+This result is achieved by using the `glf/options/train/train_glf_original_celeba.yml`
+
+![Image description](imgs/celeba_example.jpg)
