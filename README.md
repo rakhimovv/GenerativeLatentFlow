@@ -154,7 +154,7 @@ If you would like to add new dataset, please look at `glf/data/__init__.py` for 
 
 ### CelebA
 
-This result is achieved by using the `glf/options/train/train_glf_original_celeba.yml`
+This result is achieved by using the `glf/options/train/train_glf_original_celeba.yml` config.
 
 
 <p align="center"><img src="imgs/celeba_example.jpg" width="480"\></p>
