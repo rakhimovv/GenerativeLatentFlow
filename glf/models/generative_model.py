@@ -69,7 +69,7 @@ class GenerativeModel(BaseModel):
 
             if train_opt['nll_weight'] is None:
                 raise ValueError('nll loss should be always in this version')
-            self.cri_nll = NLLLoss(reduction='mean').to(self.device)  # F().to(device) # TODO FIX
+            self.cri_nll = NLLLoss(reduction='mean').to(self.device)
             self.l_nll_w = train_opt['nll_weight']
 
             if train_opt['feature_weight'] > 0:
@@ -138,17 +138,7 @@ class GenerativeModel(BaseModel):
 
         self.print_network()  # print networks structure
         self.load()  # load G, D, F if needed
-
-        # CHECK THAT FLOW WORKS CORRECTLY
-        with torch.no_grad():
-            test_input = torch.randn((2, self.nz)).to(self.device)
-            test_output, test_logdet = self.netF(test_input)
-            if isinstance(self.netF, nn.DataParallel) or isinstance(self.netF, DistributedDataParallel):
-                test_input2 = self.netF.module.reverse(test_output)
-            else:
-                test_input2 = self.netF.reverse(test_output)
-            assert torch.allclose(test_input, test_input2), 'Flow model is incorrect'
-            del test_input, test_output, test_input2, test_logdet
+        self.test_flow()
 
     def feed_data(self, data, need_GT=True):
         self.image = data[0].to(self.device)
@@ -156,7 +146,6 @@ class GenerativeModel(BaseModel):
             self.image_gt = self.image
 
     def optimize_parameters(self, step):
-
         for optimizer in self.optimizers:
             optimizer.zero_grad()
 
@@ -213,15 +202,6 @@ class GenerativeModel(BaseModel):
         self.netD.train()
         return sample
 
-    # def test(self):
-    #     self.netE.eval()
-    #     self.netD.eval()
-    #     self.netF.eval()
-    #
-    #     self.netE.train()
-    #     self.netD.train()
-    #     self.netF.train()
-
     def get_current_log(self):
         return self.log_dict
 
@@ -267,6 +247,17 @@ class GenerativeModel(BaseModel):
             self.load_network(load_path_F, self.netF, self.opt['path']['strict_load'])
 
     def save(self, iter_step):
-        self.save_network(self.netE, 'G', iter_step)
+        self.save_network(self.netE, 'E', iter_step)
         self.save_network(self.netD, 'D', iter_step)
         self.save_network(self.netF, 'F', iter_step)
+        
+        
+    def test_flow(self):
+        with torch.no_grad():
+            test_input = torch.randn((2, self.nz)).to(self.device)
+            test_output, _ = self.netF(test_input)
+            if isinstance(self.netF, nn.DataParallel) or isinstance(self.netF, DistributedDataParallel):
+                test_input2 = self.netF.module.reverse(test_output)
+            else:
+                test_input2 = self.netF.reverse(test_output)
+            assert torch.allclose(test_input, test_input2), 'Flow model is incorrect'
