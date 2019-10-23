@@ -2,7 +2,7 @@
 name: glf_original_fashion # name of the experiment
 use_tb_logger: true # use tensorboard or not
 model: generative
-gpu_ids: [1,2] # e.g. [0,1,2,5]
+gpu_ids: [3] # e.g. [0,1,2,5]
 
 #### datasets
 datasets:

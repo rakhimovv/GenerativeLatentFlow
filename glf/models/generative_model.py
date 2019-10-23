@@ -158,8 +158,8 @@ class GenerativeModel(BaseModel):
             if self.add_mask:
                 mask = (self.image_gt[:, 0, :, :] == 1).unsqueeze(1).float()
                 inv_mask = 1 - mask
-                l_pix = (1 * self.cri_pix(reconstructed * mask, self.image_gt * mask) +
-                         10 * self.cri_pix(reconstructed * inv_mask, self.image_gt * inv_mask))
+                l_pix = (0.2 * self.cri_pix(reconstructed * mask, self.image_gt * mask) +
+                         0.8 * self.cri_pix(reconstructed * inv_mask, self.image_gt * inv_mask))
             else:
                 l_pix = self.l_pix_w * self.cri_pix(reconstructed, self.image_gt)
             l_total += l_pix

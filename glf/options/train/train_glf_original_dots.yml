@@ -20,7 +20,7 @@ datasets:
 
 #### network structures
 encoder: # E
-  which_model: glf_encoder
+  which_model: glf_tiny_encoder
   img_size: 64
   in_ch: 3
   nz: 64

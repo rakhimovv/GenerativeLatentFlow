@@ -3,35 +3,49 @@ from torch import nn as nn
 from glf.models.archs.arch_util import initialize_weights
 
 
+class MeanAggregator(nn.Module):
+    def forward(self, x):
+        return x.mean(dim=1, keepdim=True)
+
+
+class Flattener(nn.Module):
+    def forward(self, x):
+        return x.reshape(x.shape[0], -1)
+
+
+class Reshaper(nn.Module):
+    def __init__(self, new_shape):
+        super().__init__()
+        assert isinstance(new_shape, list)
+        self.new_shape = new_shape
+
+    def forward(self, x):
+        return x.reshape([-1] + self.new_shape)
+
+
 class TinyEncoder(nn.Module):
     def __init__(self, img_size, in_ch, nz):
         super().__init__()
 
-        M = img_size // 4
+        assert img_size == 64, 'TinyEncoder works only for [CH, 64, 64] images'
 
-        # We use kernel size 3x3 instead of 4x4 as claimed by the original authors
         self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, 4, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(4),
-            nn.ReLU(),
-            nn.Conv2d(4, 8, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(8),
-            nn.ReLU()
+                MeanAggregator(),
+                nn.BatchNorm2d(1, affine=False),
+                nn.Conv2d(1, 8, 5, 3),
+                nn.LeakyReLU(),
+                nn.Conv2d(8, 16, 3, 2),
+                nn.LeakyReLU(),
+                nn.Conv2d(16, 32, 2, 1),
+                nn.LeakyReLU(),
+                Flattener(),
+                nn.Linear(2048, nz)
         )
 
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(8 * M * M, 256, bias=False),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Linear(256, nz)
-        )
-
-        initialize_weights(self)
+        # initialize_weights(self)
 
     def forward(self, x):
         out = self.conv(x)
-        out = self.fc(out)
         return out
 
 
