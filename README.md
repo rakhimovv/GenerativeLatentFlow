@@ -7,6 +7,7 @@ This is an unofficial PyTorch implementation of the [Generative Latent Flow
 ## Requirements
 
 The repository is built on top of PyTorch `1.2.0`. 
+The structure of the project is inspired by [open-mmlab/mmsr](https://github.com/open-mmlab/mmsr).
 To install all required packages, run the following command:
 
 ```bash
