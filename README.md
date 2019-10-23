@@ -153,9 +153,9 @@ If you would like to add new dataset, please look at `glf/data/__init__.py` for 
 
 ### Noise interpolation
 
-To play with noise interpolation and image generation check the `notebooks/celeba_demo.ipynb`.
+To play with noise interpolation and image generation check the [notebooks/celeba_demo.ipynb](https://github.com/rakhimovv/GenerativeLatentFlow/tree/master/notebooks).
 
-<p align="center"><img src="imgs/noise_example.png" width="480"\></p>
+<p align="center"><img src="imgs/noise_example.png" width="520"\></p>
 
 
 ## Results
