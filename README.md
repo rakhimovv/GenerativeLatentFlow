@@ -115,6 +115,7 @@ train:
   nll_weight: 1                         # Weight of the NLL loss in the final loss
 
   manual_seed: 10
+  val_calculate_fid_prd: true           # Calculate FID and PRD during training
   val_freq: 1000                        # How often to start the validation process
 
 logger:
