@@ -171,6 +171,6 @@ This result is achieved by using the `glf/options/train/train_glf_original_cifar
 
 ### Noise interpolation
 
-To play with noise interpolation and image generation check the [notebooks/celeba_demo.ipynb](https://github.com/rakhimovv/GenerativeLatentFlow/tree/master/notebooks).
+To play with noise interpolation and image generation check the [notebooks/celeba_demo.ipynb](https://github.com/rakhimovv/GenerativeLatentFlow/blob/master/notebooks/celeba_demo.ipynb).
 
 <p align="center"><img src="imgs/noise_example.png" width="520"\></p>
