@@ -159,3 +159,11 @@ This result is achieved by using the `glf/options/train/train_glf_original_celeb
 
 
 <p align="center"><img src="imgs/celeba_example.jpg" width="480"\></p>
+
+
+### CIFAR10
+
+This result is achieved by using the `glf/options/train/train_glf_original_cifar10.yml` config.
+
+
+<p align="center"><img src="imgs/cifar10_example.jpg" width="480"\></p>
