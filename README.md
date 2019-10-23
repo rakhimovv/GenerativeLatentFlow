@@ -151,13 +151,6 @@ MNIST, FashionMNIST, CIFAR10, [Dots](https://arxiv.org/abs/1811.03259).
 If you would like to add new dataset, please look at `glf/data/__init__.py` for an example.
 
 
-### Noise interpolation
-
-To play with noise interpolation and image generation check the [notebooks/celeba_demo.ipynb](https://github.com/rakhimovv/GenerativeLatentFlow/tree/master/notebooks).
-
-<p align="center"><img src="imgs/noise_example.png" width="520"\></p>
-
-
 ## Results
 
 ### CelebA
@@ -174,3 +167,10 @@ This result is achieved by using the `glf/options/train/train_glf_original_cifar
 
 
 <p align="center"><img src="imgs/cifar10_example.jpg" width="480"\></p>
+
+
+### Noise interpolation
+
+To play with noise interpolation and image generation check the [notebooks/celeba_demo.ipynb](https://github.com/rakhimovv/GenerativeLatentFlow/tree/master/notebooks).
+
+<p align="center"><img src="imgs/noise_example.png" width="520"\></p>
