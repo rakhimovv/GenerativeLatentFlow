@@ -1,5 +1,11 @@
 # Generative Latent Flow
 
+> **Status: archived research code.** An unofficial reimplementation, last substantively updated in
+> 2019 and unmaintained since. The dependency pins have been bumped for security only and the
+> training code has not been re-validated against them, so expect breakage on a modern stack; the two
+> open issues are unanswered. Treat it as a reference implementation. Released under Apache-2.0.
+
+
 This is an unofficial PyTorch implementation of the [Generative Latent Flow
 ](https://arxiv.org/abs/1905.10485) paper by Zhisheng Xiao, Qing Yan, Yali Amit.
 
