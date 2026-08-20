@@ -2,8 +2,9 @@
 
 > **Status: archived research code.** An unofficial reimplementation, last substantively updated in
 > 2019 and unmaintained since. The dependency pins have been bumped for security only and the
-> training code has not been re-validated against them, so expect breakage on a modern stack; the two
-> open issues are unanswered. Treat it as a reference implementation. Released under Apache-2.0.
+> training code has not been re-validated against them, so expect breakage on a modern stack. The
+> historical issues have been answered and closed; new ones are unlikely to get a timely reply. Treat
+> it as a reference implementation. Released under Apache-2.0.
 
 
 This is an unofficial PyTorch implementation of the [Generative Latent Flow
